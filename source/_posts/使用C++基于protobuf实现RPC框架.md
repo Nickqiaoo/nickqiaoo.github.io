@@ -1,8 +1,12 @@
 ---
 title: 使用C++基于protobuf实现RPC框架
 date: 2019-11-29 20:00:00
-tags: RPC,protobuf,C++
-categories: RPC
+tags: 
+- RPC 
+- protobuf 
+- C++
+categories: 
+- RPC
 ---
 
 实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。
