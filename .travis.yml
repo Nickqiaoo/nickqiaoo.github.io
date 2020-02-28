@@ -28,4 +28,4 @@ branches:
         - source # 只监测source分支
 env:
     global:
-        - GH_REF: github.com/Nickqiaoo/nickqiao.github.io.git #设置GH_REF，注意更改成自己的仓库地址
+        - GH_REF: github.com/Nickqiaoo/nickqiaoo.github.io.git #设置GH_REF，注意更改成自己的仓库地址
