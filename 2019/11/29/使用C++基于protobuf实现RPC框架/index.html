@@ -79,19 +79,19 @@
 
 
 
-<meta name="description" content="使用C++基于protobuf实现RPC框架实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 实现主要参考了muduo的RPC实现，纯异步。 pb生成代码分析在proto文件中定义service 1234service Logic &amp;#123;    // Pin">
+<meta name="description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 实现主要参考了muduo的RPC实现，纯异步。 pb生成代码分析在proto文件中定义service 1234service Logic &amp;#123;    // Ping Service     rpc Ping">
 <meta name="keywords" content="RPC,protobuf,C++">
 <meta property="og:type" content="article">
 <meta property="og:title" content="使用C++基于protobuf实现RPC框架">
-<meta property="og:url" content="http://nickqiaoo.github.io/2018/11/29/使用C++基于protobuf实现RPC框架/index.html">
+<meta property="og:url" content="http://nickqiaoo.github.io/2019/11/29/使用C++基于protobuf实现RPC框架/index.html">
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
-<meta property="og:description" content="使用C++基于protobuf实现RPC框架实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 实现主要参考了muduo的RPC实现，纯异步。 pb生成代码分析在proto文件中定义service 1234service Logic &amp;#123;    // Pin">
+<meta property="og:description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 实现主要参考了muduo的RPC实现，纯异步。 pb生成代码分析在proto文件中定义service 1234service Logic &amp;#123;    // Ping Service     rpc Ping">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/RpcProtocol.png">
-<meta property="og:updated_time" content="2020-02-28T16:25:34.171Z">
+<meta property="og:updated_time" content="2020-02-28T16:31:36.408Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="使用C++基于protobuf实现RPC框架">
-<meta name="twitter:description" content="使用C++基于protobuf实现RPC框架实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 实现主要参考了muduo的RPC实现，纯异步。 pb生成代码分析在proto文件中定义service 1234service Logic &amp;#123;    // Pin">
+<meta name="twitter:description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 实现主要参考了muduo的RPC实现，纯异步。 pb生成代码分析在proto文件中定义service 1234service Logic &amp;#123;    // Ping Service     rpc Ping">
 <meta name="twitter:image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/RpcProtocol.png">
 
 
@@ -122,7 +122,7 @@
 
 
 
-  <link rel="canonical" href="http://nickqiaoo.github.io/2018/11/29/使用C++基于protobuf实现RPC框架/">
+  <link rel="canonical" href="http://nickqiaoo.github.io/2019/11/29/使用C++基于protobuf实现RPC框架/">
 
 
 
@@ -265,7 +265,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://nickqiaoo.github.io/2018/11/29/使用C++基于protobuf实现RPC框架/">
+    <link itemprop="mainEntityOfPage" href="http://nickqiaoo.github.io/2019/11/29/使用C++基于protobuf实现RPC框架/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Nickqiao">
@@ -294,8 +294,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-29T20:00:00+00:00">
-                2018-11-29
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-29T20:00:00+00:00">
+                2019-11-29
               </time>
             
 
@@ -335,8 +335,8 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-comment-o"></i>
                 </span>
-                <a href="/2018/11/29/使用C++基于protobuf实现RPC框架/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/11/29/使用C++基于protobuf实现RPC框架/" itemprop="commentCount"></span>
+                <a href="/2019/11/29/使用C++基于protobuf实现RPC框架/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/11/29/使用C++基于protobuf实现RPC框架/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -344,7 +344,7 @@
 
           
           
-             <span id="/2018/11/29/使用C++基于protobuf实现RPC框架/" class="leancloud_visitors" data-flag-title="使用C++基于protobuf实现RPC框架">
+             <span id="/2019/11/29/使用C++基于protobuf实现RPC框架/" class="leancloud_visitors" data-flag-title="使用C++基于protobuf实现RPC框架">
                <span class="post-meta-divider">|</span>
                <span class="post-meta-item-icon">
                  <i class="fa fa-eye"></i>
@@ -375,7 +375,7 @@
       
 
       
-        <h1 id="使用C-基于protobuf实现RPC框架"><a href="#使用C-基于protobuf实现RPC框架" class="headerlink" title="使用C++基于protobuf实现RPC框架"></a>使用C++基于protobuf实现RPC框架</h1><p>实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。</p>
+        <p>实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。</p>
 <p>实现主要参考了muduo的RPC实现，纯异步。</p>
 <h2 id="pb生成代码分析"><a href="#pb生成代码分析" class="headerlink" title="pb生成代码分析"></a>pb生成代码分析</h2><p>在proto文件中定义service</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">service Logic &#123;</span><br><span class="line">    <span class="comment">// Ping Service </span></span><br><span class="line">    <span class="function">rpc <span class="title">Ping</span><span class="params">(PingReq)</span> <span class="title">returns</span><span class="params">(PingReply)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -592,7 +592,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#使用C-基于protobuf实现RPC框架"><span class="nav-number">1.</span> <span class="nav-text">使用C++基于protobuf实现RPC框架</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#pb生成代码分析"><span class="nav-number">1.1.</span> <span class="nav-text">pb生成代码分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Client接收回复"><span class="nav-number">1.2.</span> <span class="nav-text">Client接收回复</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Server端接收请求"><span class="nav-number">1.3.</span> <span class="nav-text">Server端接收请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Client发送请求"><span class="nav-number">1.4.</span> <span class="nav-text">Client发送请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">1.5.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#pb生成代码分析"><span class="nav-number">1.</span> <span class="nav-text">pb生成代码分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Client接收回复"><span class="nav-number">2.</span> <span class="nav-text">Client接收回复</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Server端接收请求"><span class="nav-number">3.</span> <span class="nav-text">Server端接收请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Client发送请求"><span class="nav-number">4.</span> <span class="nav-text">Client发送请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
@@ -762,8 +762,8 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'http://nickqiaoo.github.io/2018/11/29/使用C++基于protobuf实现RPC框架/';
-          this.page.identifier = '2018/11/29/使用C++基于protobuf实现RPC框架/';
+          this.page.url = 'http://nickqiaoo.github.io/2019/11/29/使用C++基于protobuf实现RPC框架/';
+          this.page.identifier = '2019/11/29/使用C++基于protobuf实现RPC框架/';
           this.page.title = '使用C++基于protobuf实现RPC框架';
         };
         var d = document, s = d.createElement('script');
