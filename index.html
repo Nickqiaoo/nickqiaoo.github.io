@@ -264,7 +264,7 @@
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Nickqiao">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="http://blog-1252613135.cosbj.myqcloud.com/doge.jpg">
+      <meta itemprop="image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
     </span>
 
     <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
@@ -313,7 +313,18 @@
               
               
                 <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/RPC/" itemprop="url" rel="index">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/RPC/" itemprop="url" rel="index">
                     <span itemprop="name">RPC</span>
                   </a>
                 </span>
@@ -446,12 +457,185 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://nickqiaoo.github.io/2019/11/20/基于ASIO实现C++网络库/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Nickqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nickqiao's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/11/20/基于ASIO实现C++网络库/" itemprop="url">基于ASIO实现C++网络库</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-20T21:00:00+00:00">
+                2019-11-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/11/20/基于ASIO实现C++网络库/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/11/20/基于ASIO实现C++网络库/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2019/11/20/基于ASIO实现C++网络库/" class="leancloud_visitors" data-flag-title="基于ASIO实现C++网络库">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>项目里的网络库用了asio，看了asio的文档后感觉用asio挺好用的，很容易实现一个网络库，而且有单独的版本可以不依赖boost，我们的目标是实现一个多线程，每个线程都有一个事件循环的异步网络库。</p>
+<h2 id="功能划分"><a href="#功能划分" class="headerlink" title="功能划分"></a>功能划分</h2><p>整个网络库划分为Acceptor，Loop，LoopMgr，Session，TcpServer这几个类。<br>Loop使用io_context来作为eventloop使用，post函数用来向loop中投递任务，可以看做一个任务队列，线程安全，调用run函数后可以处理各种异步事件和任务。把一些跨线程的操作投递到一个loop中执行就避免了加锁。<br>LoopMgr相当于一个Loop线程池。<br>Acceptor持有asio的acceptor用来接收新连接，<br>Session持有socket，使用async系列函数进行异步读写操作。<br>TcpServer管理连接。使用的时候通过注册TcpServer的onconnect，onmessage，ondisconnect回调函数完成对应事件的逻辑处理。<br>基本使用方法：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">TcpServer server;</span><br><span class="line">server.setNewSessionCallback&lt;UserSession&gt;();</span><br><span class="line">server.setConnectionCallback();</span><br><span class="line">server.setMessageCallback();</span><br><span class="line">server.setServerDisconnectCallback();</span><br><span class="line">server.run();</span><br></pre></td></tr></table></figure></p>
+<h3 id="Acceptor"><a href="#Acceptor" class="headerlink" title="Acceptor"></a>Acceptor</h3><p>Acceptor类直接封装asio的acceptor<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Acceptor::accept() &#123;</span><br><span class="line">    <span class="keyword">auto</span> session = newSessionCallback_();</span><br><span class="line">    acceptor_.async_accept(session-&gt;Socket(), [session, <span class="keyword">this</span>](<span class="keyword">const</span> asio::error_code &amp;err) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!err) &#123;</span><br><span class="line">            session-&gt;start();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            session-&gt;close();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(!acceptor_.is_open())&#123;        </span><br><span class="line">            <span class="keyword">return</span> ;</span><br><span class="line">        &#125;</span><br><span class="line">        accept();</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>asio的异步函数都是这种用法，需要在回调函数中重新调用。Accepter需要设置好newSessionCallback回调用来创建新的session </p>
+<h3 id="Session"><a href="#Session" class="headerlink" title="Session"></a>Session</h3><p>Session封装了socket的读写操作，在start函数中调用设置的connectioncallback之后开始read操作<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Session::read() &#123;</span><br><span class="line">    <span class="function"><span class="keyword">auto</span> <span class="title">self</span><span class="params">(shared_from_this())</span></span>;</span><br><span class="line">    socket_.async_read_some(asio::buffer(read_buf_.beginWrite(), read_buf_.writableBytes()), [self, <span class="keyword">this</span>](<span class="keyword">const</span> asio::error_code &amp;err, <span class="keyword">size_t</span> size) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!err) &#123;</span><br><span class="line">            <span class="comment">//LOG_INFO("receive data,size:&#123;&#125;",size);</span></span><br><span class="line">            read_buf_.hasWritten(size);</span><br><span class="line">            messagecallback_(self, &amp;read_buf_);</span><br><span class="line">            read_buf_.ensureWritableBytes(size);</span><br><span class="line">            read();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            LOG_ERROR(<span class="string">"read error: &#123;&#125;"</span>, err.message());</span><br><span class="line">            <span class="keyword">if</span>(reconnect_)&#123;</span><br><span class="line">                reconnect();</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                disconnectcallback_(id_);</span><br><span class="line">                close();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在回调中调用负责解包的messagecallback，这里把解包操作完全交个用户设置的回调，用户需要在回调中操作buffer，读出数据后调用retrive移动读指针，一般写法是再加一层codec负责解包后再处理消息。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Session::send(BufferPtr buffer) &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(mutex_);</span><br><span class="line">        unsend_queue_.push_back(buffer);</span><br><span class="line">        <span class="comment">// TODO(shenyu): race condition?</span></span><br><span class="line">        <span class="keyword">if</span> (write_buf_.readableBytes() != <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">auto</span> <span class="title">self</span><span class="params">(shared_from_this())</span></span>;</span><br><span class="line">    loop_-&gt;runInLoop([<span class="keyword">this</span>, self]() &#123;</span><br><span class="line">        <span class="keyword">bool</span> write_in_progress = (write_buf_.readableBytes() != <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (!write_in_progress) &#123;</span><br><span class="line">            write();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> Session::write() &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(mutex_);</span><br><span class="line">        tmp_queue_.swap(unsend_queue_);</span><br><span class="line">        unsend_queue_.clear();</span><br><span class="line">        <span class="keyword">if</span> (tmp_queue_.empty()) <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;buf : tmp_queue_) &#123;</span><br><span class="line">        write_buf_.append(buf-&gt;peek(), buf-&gt;readableBytes());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">auto</span> <span class="title">self</span><span class="params">(shared_from_this())</span></span>;</span><br><span class="line">    socket_.async_write_some(asio::buffer(write_buf_.peek(), write_buf_.readableBytes()), [self, <span class="keyword">this</span>](<span class="keyword">const</span> asio::error_code &amp;err, <span class="keyword">size_t</span> size) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!err) &#123;</span><br><span class="line">            write_buf_.retrieve(write_buf_.readableBytes());</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(<span class="keyword">this</span>-&gt;mutex_);</span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;unsend_queue_.empty()) <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            write();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            disconnectcallback_(id_);</span><br><span class="line">            LOG_ERROR(<span class="string">"write error: &#123;&#125;"</span>, err.message());</span><br><span class="line">            close();</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>写操作稍微复杂一些，不能直接调用异步写操作，如果连续两次调用write函数，而第一个发的包比较大，第二次的包比较小，可能第一个包没有发完第二个就发出去了，保证不了顺序。正确的做法是增加一个待发送队列，send时统一push到未发送队列，并判断发送buf是否为空，空说明当前没有在发消息，调用write，write时将未发送队列的内容拷贝到发送buf中一起发送。</p>
+<h3 id="TcpServer"><a href="#TcpServer" class="headerlink" title="TcpServer"></a>TcpServer</h3><p>用户直接使用TcpServer类，只需实现事件的回调函数即可。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">SessionPtr TcpServer::newSession() &#123;</span><br><span class="line">    <span class="keyword">auto</span> loop = loopmgr_.findNextLoop();</span><br><span class="line">    <span class="keyword">auto</span> session = <span class="built_in">std</span>::make_shared&lt;T&gt;(loop, sessionid_++);</span><br><span class="line">    session-&gt;setMessageCallback(messagecallback_);</span><br><span class="line">    session-&gt;setConnectionCallback(connectioncallback_);</span><br><span class="line">    session-&gt;setDisconnectCallback(<span class="built_in">std</span>::bind(&amp;TcpServer::DefaultDisconnectCallback, <span class="keyword">this</span>, _1));</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(mutex_);</span><br><span class="line">        connections_.insert(&#123;sessionid_, session&#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> session;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的newSession使用模板函数用来创建Session不同的子类，直接使用轮询将session派发到不同的eventloop中。</p>
+<p>直接使用asio比用epoll还是方便不少的，而且跨平台，但是asio的代码可读性太差，不知道会不会有什么坑，性能比封装epoll肯定也要差些。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://nickqiaoo.github.io/2018/10/29/PhxRPC源码分析（三）-RPC/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Nickqiao">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="http://blog-1252613135.cosbj.myqcloud.com/doge.jpg">
+      <meta itemprop="image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
     </span>
 
     <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
@@ -646,7 +830,7 @@
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Nickqiao">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="http://blog-1252613135.cosbj.myqcloud.com/doge.jpg">
+      <meta itemprop="image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
     </span>
 
     <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
@@ -818,7 +1002,7 @@
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Nickqiao">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="http://blog-1252613135.cosbj.myqcloud.com/doge.jpg">
+      <meta itemprop="image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
     </span>
 
     <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
@@ -988,7 +1172,7 @@
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Nickqiao">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="http://blog-1252613135.cosbj.myqcloud.com/doge.jpg">
+      <meta itemprop="image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
     </span>
 
     <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
@@ -1181,7 +1365,7 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
             
-              <img class="site-author-image" itemprop="image" src="http://blog-1252613135.cosbj.myqcloud.com/doge.jpg" alt="Nickqiao">
+              <img class="site-author-image" itemprop="image" src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png" alt="Nickqiao">
             
               <p class="site-author-name" itemprop="name">Nickqiao</p>
               <p class="site-description motion-element" itemprop="description"></p>
@@ -1194,7 +1378,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">6</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1205,7 +1389,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -1216,7 +1400,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">7</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

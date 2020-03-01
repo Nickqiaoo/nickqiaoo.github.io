@@ -87,7 +87,7 @@
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
 <meta property="og:description" content="前言现在C++的开发开始流行使用coroutine，也就是协程。我看腾讯的几个开源项目里面都有协程的实现。使用协程可以用同步的写法，达到异步的性能。它的基本原理其实就是在IO等待的时候切换出去，在适当的时刻再切换回来。云风用200行代码实现了一个最简单的协程，我们先看这个代码了解一下协程的原理，然后再看微信的libco实现。 ##协程简单介绍 协程可以理解为一个用户级的线程，一个线程里跑多个协程。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-02-28T16:35:26.248Z">
+<meta property="og:updated_time" content="2020-03-01T14:21:05.607Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="云风coroutine源码分析">
 <meta name="twitter:description" content="前言现在C++的开发开始流行使用coroutine，也就是协程。我看腾讯的几个开源项目里面都有协程的实现。使用协程可以用同步的写法，达到异步的性能。它的基本原理其实就是在IO等待的时候切换出去，在适当的时刻再切换回来。云风用200行代码实现了一个最简单的协程，我们先看这个代码了解一下协程的原理，然后再看微信的libco实现。 ##协程简单介绍 协程可以理解为一个用户级的线程，一个线程里跑多个协程。">
@@ -268,7 +268,7 @@
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Nickqiao">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="http://blog-1252613135.cosbj.myqcloud.com/doge.jpg">
+      <meta itemprop="image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
     </span>
 
     <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
@@ -501,7 +501,7 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
             
-              <img class="site-author-image" itemprop="image" src="http://blog-1252613135.cosbj.myqcloud.com/doge.jpg" alt="Nickqiao">
+              <img class="site-author-image" itemprop="image" src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png" alt="Nickqiao">
             
               <p class="site-author-name" itemprop="name">Nickqiao</p>
               <p class="site-description motion-element" itemprop="description"></p>
@@ -514,7 +514,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">6</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -525,7 +525,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -536,7 +536,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">7</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
