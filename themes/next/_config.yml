@@ -154,7 +154,7 @@ links_layout: block
 # Sidebar Avatar
 # in theme directory(source/images): /images/avatar.gif
 # in site  directory(source/uploads): /uploads/avatar.gif
-avatar: http://blog-1252613135.cosbj.myqcloud.com/doge.jpg
+avatar: https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png
 
 # Table Of Contents in the Sidebar
 toc:
