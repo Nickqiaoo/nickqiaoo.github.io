@@ -259,6 +259,189 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://nickqiaoo.github.io/2020/01/29/B站微服务框架自适应限流模块分析/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Nickqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nickqiao's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/01/29/B站微服务框架自适应限流模块分析/" itemprop="url">B站微服务框架自适应限流模块分析</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-29T20:00:00+00:00">
+                2020-01-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/微服务/" itemprop="url" rel="index">
+                    <span itemprop="name">微服务</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2020/01/29/B站微服务框架自适应限流模块分析/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2020/01/29/B站微服务框架自适应限流模块分析/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2020/01/29/B站微服务框架自适应限流模块分析/" class="leancloud_visitors" data-flag-title="B站微服务框架自适应限流模块分析">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>微服务中限流模块是必不可少的，理想的情况是使系统维持在能承受的负载范围内，没有堆积请求，请求处理时间就成了一个很好地判断指标，如果请求处理的时间过长，说明发生了堆积。传统的做法可能是硬性限制qps或队列长度或者根据cpu使用率等指标限制，无法实现自适应限流，根据请求处理时间使用算法限流可以很好地自适应系统的变化。</p>
+<h2 id="限流接口"><a href="#限流接口" class="headerlink" title="限流接口"></a>限流接口</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Limiter limit interface.</span></span><br><span class="line"><span class="keyword">type</span> Limiter <span class="keyword">interface</span> &#123;</span><br><span class="line">	Allow(ctx context.Context) (<span class="function"><span class="keyword">func</span><span class="params">(Op)</span>, <span class="title">error</span>)</span></span><br><span class="line"><span class="function">&#125;</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">// <span class="title">Limiter</span> <span class="title">use</span> <span class="title">tcp</span> <span class="title">vegas</span> + <span class="title">codel</span> <span class="title">for</span> <span class="title">adaptive</span> <span class="title">limit</span>.</span></span><br><span class="line"><span class="function"><span class="title">type</span> <span class="title">Limiter</span> <span class="title">struct</span></span> &#123;</span><br><span class="line">	rate  *vegas.Vegas</span><br><span class="line">	queue *aqm.Queue</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Allow immplemnet rate.Limiter.</span></span><br><span class="line"><span class="comment">// if error is returned,no need to call done()</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *Limiter)</span> <span class="title">Allow</span><span class="params">(ctx context.Context)</span> <span class="params">(<span class="keyword">func</span>(rate.Op)</span>, <span class="title">error</span>)</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> (</span><br><span class="line">		done <span class="function"><span class="keyword">func</span><span class="params">(time.Time, rate.Op)</span></span></span><br><span class="line"><span class="function">		<span class="title">err</span>  <span class="title">error</span></span></span><br><span class="line"><span class="function">		<span class="title">ok</span>   <span class="title">bool</span></span></span><br><span class="line"><span class="function">	)</span></span><br><span class="line"><span class="function">	<span class="title">if</span> <span class="title">done</span>, <span class="title">ok</span> = <span class="title">l</span>.<span class="title">rate</span>.<span class="title">Acquire</span><span class="params">()</span>; !<span class="title">ok</span></span> &#123;</span><br><span class="line">		<span class="comment">// NOTE exceed max inflight, use queue</span></span><br><span class="line">		<span class="keyword">if</span> err = l.queue.Push(ctx); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			done(time.Time&#123;&#125;, rate.Ignore)</span><br><span class="line">			<span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(rate.Op)</span></span> &#123;&#125;, err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	start := time.Now()</span><br><span class="line">	<span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(op rate.Op)</span></span> &#123;</span><br><span class="line">		done(start, op)</span><br><span class="line">		l.queue.Pop()</span><br><span class="line">	&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接口很简单，就一个Allow函数，它会返回一个done func，需要我们执行完请求后调用。可以看到具体的实现有两个组件，Vegas和aqm队列，首先使用Vegas，不成功放入aqm队列。</p>
+<h2 id="aqm"><a href="#aqm" class="headerlink" title="aqm"></a>aqm</h2><p>主动队列管理（Active Queue Management，AQM），网络包传输的一种拥塞控制机制，使得在路由器缓存被耗尽前有计划的丢掉一部分分组，Codel是一种延时控制算法，通过检测排队延时来判断拥塞情况，可以自适应的调整丢包，这里有一段代码<a href="https://queue.acm.org/appendices/codel.html" target="_blank" rel="noopener">实现</a>。</p>
+<p>B站的go版本实现：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Config <span class="keyword">struct</span> &#123;</span><br><span class="line">	Target   <span class="keyword">int64</span> <span class="comment">// target queue delay (default 20 ms). 能容忍的最大排队延时</span></span><br><span class="line">	Internal <span class="keyword">int64</span> <span class="comment">// sliding minimum time window width (default 500 ms)  窗口大小</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> packet <span class="keyword">struct</span> &#123;</span><br><span class="line">	ch <span class="keyword">chan</span> <span class="keyword">bool</span></span><br><span class="line">	ts <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Queue queue is CoDel req buffer queue.</span></span><br><span class="line"><span class="keyword">type</span> Queue <span class="keyword">struct</span> &#123;</span><br><span class="line">	pool    sync.Pool</span><br><span class="line">	packets <span class="keyword">chan</span> packet</span><br><span class="line"></span><br><span class="line">	mux      sync.RWMutex</span><br><span class="line">	conf     *Config</span><br><span class="line">	count    <span class="keyword">int64</span></span><br><span class="line">	dropping <span class="keyword">bool</span>  <span class="comment">// 	Equal to 1 if in drop state</span></span><br><span class="line">	faTime   <span class="keyword">int64</span> <span class="comment">//  丢弃状态触发启动时间</span></span><br><span class="line">	dropNext <span class="keyword">int64</span> <span class="comment">// 下一次开始丢弃的时间</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Push req into CoDel request buffer queue.</span></span><br><span class="line"><span class="comment">// if return error is nil,the caller must call q.Done() after finish request handling</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *Queue)</span> <span class="title">Push</span><span class="params">(ctx context.Context)</span> <span class="params">(err error)</span></span> &#123;</span><br><span class="line">	r := packet&#123;</span><br><span class="line">		ch: q.pool.Get().(<span class="keyword">chan</span> <span class="keyword">bool</span>),</span><br><span class="line">		ts: time.Now().UnixNano() / <span class="keyword">int64</span>(time.Millisecond),</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> q.packets &lt;- r:</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		err = ecode.LimitExceed <span class="comment">//channel满直接丢弃</span></span><br><span class="line">		q.pool.Put(r.ch)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> drop := &lt;-r.ch: <span class="comment">//阻塞等待pop判断是否丢弃</span></span><br><span class="line">			<span class="keyword">if</span> drop &#123;</span><br><span class="line">				err = ecode.LimitExceed</span><br><span class="line">			&#125;</span><br><span class="line">			q.pool.Put(r.ch)</span><br><span class="line">		<span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">			err = ecode.Deadline</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Pop req from CoDel request buffer queue.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *Queue)</span> <span class="title">Pop</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> p := &lt;-q.packets:</span><br><span class="line">			drop := q.judge(p) <span class="comment">//如果判断为丢弃，循环检测</span></span><br><span class="line">			<span class="keyword">select</span> &#123;</span><br><span class="line">			<span class="keyword">case</span> p.ch &lt;- drop:</span><br><span class="line">				<span class="keyword">if</span> !drop &#123;</span><br><span class="line">					<span class="keyword">return</span></span><br><span class="line">				&#125;</span><br><span class="line">			<span class="keyword">default</span>:</span><br><span class="line">				q.pool.Put(p.ch)</span><br><span class="line">			&#125;</span><br><span class="line">		<span class="keyword">default</span>:</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *Queue)</span> <span class="title">controlLaw</span><span class="params">(now <span class="keyword">int64</span>)</span> <span class="title">int64</span></span> &#123;</span><br><span class="line">	q.dropNext = now + <span class="keyword">int64</span>(<span class="keyword">float64</span>(q.conf.Internal)/math.Sqrt(<span class="keyword">float64</span>(q.count))) <span class="comment">//根据当前丢弃周期内的丢包数量计算下一次丢弃的时间，丢弃的数量越多，丢弃间隔越短。</span></span><br><span class="line">	<span class="keyword">return</span> q.dropNext</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// judge decide if the packet should drop or not.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *Queue)</span> <span class="title">judge</span><span class="params">(p packet)</span> <span class="params">(drop <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">	now := time.Now().UnixNano() / <span class="keyword">int64</span>(time.Millisecond)</span><br><span class="line">	sojurn := now - p.ts</span><br><span class="line">	q.mux.Lock()</span><br><span class="line">	<span class="keyword">defer</span> q.mux.Unlock()</span><br><span class="line">	<span class="keyword">if</span> sojurn &lt; q.conf.Target &#123; <span class="comment">//延时小于容忍时间，停止丢弃</span></span><br><span class="line">		q.faTime = <span class="number">0</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> q.faTime == <span class="number">0</span> &#123; <span class="comment">//延时较大后容忍一个窗口期</span></span><br><span class="line">		q.faTime = now + q.conf.Internal</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> now &gt;= q.faTime &#123; <span class="comment">//延时较大维持一个窗口期后开始进行是否进入丢弃状态的判读</span></span><br><span class="line">		drop = <span class="literal">true</span>  <span class="comment">//这里直接将返回值设为true，也就是说容忍一个窗口期后直接开始丢弃，而原始算法实现中丢弃只在状态下发生，如果最近没有发生丢弃应该继续容忍一个一个窗口期再开始丢弃的。</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> q.dropping &#123; <span class="comment">//丢弃状态下延时较小后直接停止</span></span><br><span class="line">		<span class="keyword">if</span> !drop &#123;</span><br><span class="line">			<span class="comment">// sojourn time below target - leave dropping state</span></span><br><span class="line">			q.dropping = <span class="literal">false</span></span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> now &gt; q.dropNext &#123;</span><br><span class="line">			q.count++</span><br><span class="line">			q.dropNext = q.controlLaw(q.dropNext)</span><br><span class="line">			drop = <span class="literal">true</span></span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;   <span class="comment">//延时较大维持一个窗口期后如果距上一次计算出的丢弃时间在一个窗口期内直接进入丢弃状态，如果一个窗口期内没有丢弃则再容忍一个窗口期</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> drop &amp;&amp; (now-q.dropNext &lt; q.conf.Internal || now-q.faTime &gt;= q.conf.Internal) &#123;</span><br><span class="line">		q.dropping = <span class="literal">true</span></span><br><span class="line">		<span class="comment">// If we're in a drop cycle, the drop rate that controlled the queue</span></span><br><span class="line">		<span class="comment">// on the last cycle is a good starting point to control it now.</span></span><br><span class="line">		<span class="keyword">if</span> now-q.dropNext &lt; q.conf.Internal &#123; <span class="comment">//如果距上一次计算出的丢弃时间在一个窗口期内直接沿用之前的控制策略，否则从1开始重新调整</span></span><br><span class="line">			<span class="keyword">if</span> q.count &gt; <span class="number">2</span> &#123;</span><br><span class="line">				q.count = q.count - <span class="number">2</span></span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				q.count = <span class="number">1</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			q.count = <span class="number">1</span></span><br><span class="line">		&#125;</span><br><span class="line">		q.dropNext = q.controlLaw(now)</span><br><span class="line">		drop = <span class="literal">true</span></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>codel算法的大致思想就是根据延时情况判断丢弃策略，在限流中就是请求的处理时间，算法只需要两个参数，一个是容忍的最大时延，一个是窗口期，当超过容忍时延时，进入一个窗口期的容忍阶段，此阶段不开始丢弃，这样容忍了短时间的突发流量，在超过容忍阶段后如果最近发生过丢弃则进入丢弃状态，否则再容忍一个窗口期，在丢弃状态下只要时延小于容忍时延就停止丢弃，丢弃状态下随着丢弃数量的不断增加丢弃间隔会缩短，也就是丢弃的越来越频繁。</p>
+<h2 id="Vegas"><a href="#Vegas" class="headerlink" title="Vegas"></a>Vegas</h2><p>Vegas是TCP中使用的基于时延的拥塞控制算法，通过比较实际吞吐量和期望吞吐量来调节拥塞窗口的大小。</p>
+<ul>
+<li>当前能处理的请求数量通过的最请求limit（拥塞窗口尺寸）</li>
+<li>请求最短处理时间 minRTT</li>
+<li>请求实际处理时间 lastRTT</li>
+<li>期望通过速率 Expect = limit/minRTT</li>
+<li>实际通过速率 Actual = limit/lastRTT</li>
+<li>速率差值 Diff = Expect-Actual</li>
+</ul>
+<p>Diff = queue/minRTT = limit/minRTT - limit/lastRTT = limit(1/minRTT - 1/lastRTT)<br>最后推导出 queueSize = limit * (1 - minRTT/lastRTT) 也就是等待中的请求大小是queueSize，我们根据queueSize的大小来调整limit</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Vegas tcp vegas.</span></span><br><span class="line"><span class="keyword">type</span> Vegas <span class="keyword">struct</span> &#123;</span><br><span class="line">	limit      <span class="keyword">int64</span></span><br><span class="line">	inFlight   <span class="keyword">int64</span> <span class="comment">//处理中的请求数</span></span><br><span class="line">	updateTime <span class="keyword">int64</span></span><br><span class="line">	minRTT     <span class="keyword">int64</span></span><br><span class="line"></span><br><span class="line">	sample atomic.Value</span><br><span class="line">	mu     sync.Mutex</span><br><span class="line">	probes <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//记录一个时间段内的统计信息</span></span><br><span class="line"><span class="keyword">type</span> sample <span class="keyword">struct</span> &#123;</span><br><span class="line">	count       <span class="keyword">int64</span></span><br><span class="line">	maxInFlight <span class="keyword">int64</span></span><br><span class="line">	drop        <span class="keyword">int64</span></span><br><span class="line">	<span class="comment">// nanoseconds</span></span><br><span class="line">	totalRTT <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Acquire No matter success or not,done() must be called at last.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(v *Vegas)</span> <span class="title">Acquire</span><span class="params">()</span> <span class="params">(done <span class="keyword">func</span>(time.Time, rate.Op)</span>, <span class="title">success</span> <span class="title">bool</span>)</span> &#123;</span><br><span class="line">	inFlight := atomic.AddInt64(&amp;v.inFlight, <span class="number">1</span>)</span><br><span class="line">	<span class="keyword">if</span> inFlight &lt;= atomic.LoadInt64(&amp;v.limit) &#123;</span><br><span class="line">		success = <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(start time.Time, op rate.Op)</span></span> &#123; <span class="comment">//请求处理完后调用</span></span><br><span class="line">		atomic.AddInt64(&amp;v.inFlight, <span class="number">-1</span>)</span><br><span class="line">		<span class="keyword">if</span> op == rate.Ignore &#123;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">		end := time.Now().UnixNano()</span><br><span class="line">		rtt := end - start.UnixNano()</span><br><span class="line"></span><br><span class="line">		s := v.sample.Load().(*sample)</span><br><span class="line">		<span class="keyword">if</span> op == rate.Drop &#123;</span><br><span class="line">			s.Add(rtt, inFlight, <span class="literal">true</span>)</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> op == rate.Success &#123;</span><br><span class="line">			s.Add(rtt, inFlight, <span class="literal">false</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> end &gt; atomic.LoadInt64(&amp;v.updateTime) &amp;&amp; s.Count() &gt;= <span class="number">16</span> &#123;</span><br><span class="line">			v.mu.Lock()</span><br><span class="line">			<span class="keyword">defer</span> v.mu.Unlock()</span><br><span class="line">			<span class="keyword">if</span> v.sample.Load().(*sample) != s &#123; <span class="comment">//其它协程已经重置sample，进入下一个窗口期，直接返回</span></span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			v.sample.Store(&amp;sample&#123;&#125;) <span class="comment">//重置sample</span></span><br><span class="line"></span><br><span class="line">			lastRTT := s.RTT() <span class="comment">//统计窗口期的平均处理时间</span></span><br><span class="line">			<span class="keyword">if</span> lastRTT &lt;= <span class="number">0</span> &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			updateTime := end + lastRTT*<span class="number">5</span> <span class="comment">//设置当前窗口期大小</span></span><br><span class="line">			<span class="keyword">if</span> lastRTT*<span class="number">5</span> &lt; _minWindowTime &#123;</span><br><span class="line">				updateTime = end + _minWindowTime</span><br><span class="line">			&#125; <span class="keyword">else</span> <span class="keyword">if</span> lastRTT*<span class="number">5</span> &gt; _maxWindowTime &#123;</span><br><span class="line">				updateTime = end + _maxWindowTime</span><br><span class="line">			&#125;</span><br><span class="line">			atomic.StoreInt64(&amp;v.updateTime, updateTime)</span><br><span class="line">			limit := atomic.LoadInt64(&amp;v.limit)</span><br><span class="line">			queue := <span class="keyword">float64</span>(limit) * (<span class="number">1</span> - <span class="keyword">float64</span>(v.minRTT)/<span class="keyword">float64</span>(lastRTT)) <span class="comment">//估算等待中的请求数量</span></span><br><span class="line">			v.probes-- <span class="comment">//每隔一段时间探测minRTT，如果窗口期的流量与限制差距较大则说明minRTT不准确，更新为lastRTT</span></span><br><span class="line">			<span class="keyword">if</span> v.probes &lt;= <span class="number">0</span> &#123;</span><br><span class="line">				maxFlight := s.MaxInFlight()</span><br><span class="line">				<span class="keyword">if</span> maxFlight*<span class="number">2</span> &lt; v.limit || maxFlight &lt;= _minLimit &#123;</span><br><span class="line">					v.probes = <span class="number">3</span>*limit + rand.Int63n(<span class="number">3</span>*limit)</span><br><span class="line">					v.minRTT = lastRTT</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> v.minRTT == <span class="number">0</span> || lastRTT &lt; v.minRTT &#123;</span><br><span class="line">				v.minRTT = lastRTT</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">var</span> newLimit <span class="keyword">float64</span></span><br><span class="line">			threshold := math.Sqrt(<span class="keyword">float64</span>(limit)) / <span class="number">2</span></span><br><span class="line">			<span class="keyword">if</span> s.Drop() &#123;</span><br><span class="line">				newLimit = <span class="keyword">float64</span>(limit) - threshold</span><br><span class="line">			&#125; <span class="keyword">else</span> <span class="keyword">if</span> s.MaxInFlight()*<span class="number">2</span> &lt; v.limit &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> queue &lt; threshold &#123; <span class="comment">//扩缩策略</span></span><br><span class="line">					newLimit = <span class="keyword">float64</span>(limit) + <span class="number">6</span>*threshold</span><br><span class="line">				&#125; <span class="keyword">else</span> <span class="keyword">if</span> queue &lt; <span class="number">2</span>*threshold &#123;</span><br><span class="line">					newLimit = <span class="keyword">float64</span>(limit) + <span class="number">3</span>*threshold</span><br><span class="line">				&#125; <span class="keyword">else</span> <span class="keyword">if</span> queue &lt; <span class="number">3</span>*threshold &#123;</span><br><span class="line">					newLimit = <span class="keyword">float64</span>(limit) + threshold</span><br><span class="line">				&#125; <span class="keyword">else</span> <span class="keyword">if</span> queue &gt; <span class="number">6</span>*threshold &#123;</span><br><span class="line">					newLimit = <span class="keyword">float64</span>(limit) - threshold</span><br><span class="line">				&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">					<span class="keyword">return</span></span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			newLimit = math.Max(_minLimit, math.Min(_maxLimit, newLimit))</span><br><span class="line">			atomic.StoreInt64(&amp;v.limit, <span class="keyword">int64</span>(newLimit))</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;, success</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>总结一下，vegas算法根据统计出的最小时延和窗口期的平均时延作比较估算出等待中的请求数量，调整限制大小</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><blockquote>
+<p><a href="https://queue.acm.org/appendices/codel.html" target="_blank" rel="noopener">https://queue.acm.org/appendices/codel.html</a> \<br><a href="http://blog.zxh.site/2019/07/01/tcp-vegas/" target="_blank" rel="noopener">http://blog.zxh.site/2019/07/01/tcp-vegas/</a> </p>
+</blockquote>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://nickqiaoo.github.io/2019/11/29/使用C++基于protobuf实现RPC框架/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
@@ -313,18 +496,7 @@
               
               
                 <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index">
-                    <span itemprop="name">C++</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/RPC/" itemprop="url" rel="index">
+                  <a href="/categories/RPC/" itemprop="url" rel="index">
                     <span itemprop="name">RPC</span>
                   </a>
                 </span>
@@ -1378,7 +1550,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-count">7</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1400,7 +1572,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">9</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
