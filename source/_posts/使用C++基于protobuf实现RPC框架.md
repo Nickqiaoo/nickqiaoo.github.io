@@ -6,7 +6,6 @@ tags:
 - protobuf 
 - C++
 categories: 
-- C++
 - RPC
 ---
 
