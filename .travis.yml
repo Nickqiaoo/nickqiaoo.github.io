@@ -9,7 +9,7 @@ before_install:
 install:
     - npm install # 安装hexo及插件
     - npm install --save hexo-helper-live2d
-    - npm install live2d-widget-model-haru
+    - npm install --save live2d-widget-model-haru
 script:
     - hexo clean # 清除
     - hexo g # 生成
