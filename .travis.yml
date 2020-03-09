@@ -12,8 +12,8 @@ install:
     - npm install live2d-widget-model-haru
 script:
     - cd node_modules/live2d-widget-model-haru/
-    - mkdir 02
     - cp package.json 02/
+    - cd ../..
     - hexo clean # 清除
     - hexo g # 生成
 after_script:
