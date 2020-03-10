@@ -10,19 +10,19 @@
 <title>PhxRPC源码分析（一）BlockTcpStream - Nickqiao&#39;s blog</title>
 
 
-    <meta name="description" content="phxrpc简介phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。 定制输入输出流phxrpc使用标准输入输出的方式封装了socket，使用&amp;lt;&amp;lt;和&amp;gt;&amp;gt;来实现读写。实现类图如下： streambufstreambuf是一个流缓冲区，包含输入和输出缓冲区。向ostream写入时，数据会放到输出缓冲区中，从istream读取时，数据从输入缓冲">
+    <meta name="description" content="phxrpc简介phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。这个框架用了流式操作，很有特点。之前总听人说iostream操作慢，没有研究过流操作底层的实现，今天就来分析一下。">
 <meta name="keywords" content="PhxRPC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="PhxRPC源码分析（一）BlockTcpStream">
 <meta property="og:url" content="http://nickqiaoo.github.io/2018/10/29/phxrpc-tcpstream/index.html">
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
-<meta property="og:description" content="phxrpc简介phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。 定制输入输出流phxrpc使用标准输入输出的方式封装了socket，使用&amp;lt;&amp;lt;和&amp;gt;&amp;gt;来实现读写。实现类图如下： streambufstreambuf是一个流缓冲区，包含输入和输出缓冲区。向ostream写入时，数据会放到输出缓冲区中，从istream读取时，数据从输入缓冲">
+<meta property="og:description" content="phxrpc简介phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。这个框架用了流式操作，很有特点。之前总听人说iostream操作慢，没有研究过流操作底层的实现，今天就来分析一下。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-03-10T08:53:33.931Z">
+<meta property="og:updated_time" content="2020-03-10T10:10:16.441Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PhxRPC源码分析（一）BlockTcpStream">
-<meta name="twitter:description" content="phxrpc简介phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。 定制输入输出流phxrpc使用标准输入输出的方式封装了socket，使用&amp;lt;&amp;lt;和&amp;gt;&amp;gt;来实现读写。实现类图如下： streambufstreambuf是一个流缓冲区，包含输入和输出缓冲区。向ostream写入时，数据会放到输出缓冲区中，从istream读取时，数据从输入缓冲">
+<meta name="twitter:description" content="phxrpc简介phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。这个框架用了流式操作，很有特点。之前总听人说iostream操作慢，没有研究过流操作底层的实现，今天就来分析一下。">
 <meta name="twitter:image" content="http://nickqiaoo.github.io/images/og_image.png">
 
 
@@ -108,14 +108,6 @@
             
             <div class="navbar-end">
                 
-                    
-                    <a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
-                        
-                        <i class="fab fa-github"></i>
-                        
-                    </a>
-                    
-                
                 
                 <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
                     <i class="fas fa-list-ul"></i>
@@ -151,7 +143,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    5 分钟 读完 (大约 676 个字)
+                    5 分钟 读完 (大约 727 个字)
                 </span>
                 
                 
@@ -164,7 +156,7 @@
             
         </h1>
         <div class="content">
-            <h2 id="phxrpc简介"><a href="#phxrpc简介" class="headerlink" title="phxrpc简介"></a>phxrpc简介</h2><p>phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。</p>
+            <h2 id="phxrpc简介"><a href="#phxrpc简介" class="headerlink" title="phxrpc简介"></a>phxrpc简介</h2><p>phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。这个框架用了流式操作，很有特点。之前总听人说iostream操作慢，没有研究过流操作底层的实现，今天就来分析一下。<br><a id="more"></a></p>
 <h2 id="定制输入输出流"><a href="#定制输入输出流" class="headerlink" title="定制输入输出流"></a>定制输入输出流</h2><p>phxrpc使用标准输入输出的方式封装了socket，使用<code>&lt;&lt;</code>和<code>&gt;&gt;</code>来实现读写。<br>实现类图如下：<br><img src="http://blog-1252613135.cosbj.myqcloud.com/socket_stream.png" alt="这里写图片描述"></p>
 <h2 id="streambuf"><a href="#streambuf" class="headerlink" title="streambuf"></a>streambuf</h2><p><code>streambuf</code>是一个流缓冲区，包含输入和输出缓冲区。向<code>ostream</code>写入时，数据会放到输出缓冲区中，从<code>istream</code>读取时，数据从输入缓冲区中读出。<br><img src="http://upload.cppreference.com/mwiki/images/7/75/std-streambuf.svg" alt="这里写图片描述"></p>
 <h2 id="streambuf输出缓冲区"><a href="#streambuf输出缓冲区" class="headerlink" title="streambuf输出缓冲区"></a>streambuf输出缓冲区</h2><p>输出缓冲区由三个指针维护，<code>pbase</code>指向起始位置，<code>epptr</code>指向末尾（类似迭代器，前闭后开），<code>pptr</code>指向当前可放置的位置。向输出缓冲区写入数据的函数是<code>sputc</code>和<code>sputn</code>，第一个写入一个字符并将<code>pptr</code>向后移动一位。第二个写入多个字符。当缓冲区满时，会调用<code>overflow()</code>函数将所有数据发送并清空缓冲区，调用<code>pbump(0)</code>重置pptr指针到起始位置。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> BaseTcpStreamBuf::sync() &#123; <span class="comment">//缓冲区已满，将数据发送</span></span><br><span class="line">    <span class="keyword">int</span> sent = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> total = pptr() - pbase();</span><br><span class="line">    <span class="keyword">while</span> (sent &lt; total) &#123;</span><br><span class="line">        <span class="keyword">int</span> ret = psend(pbase() + sent, total - sent, <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (ret &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            sent += ret;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">//phxrpc::log(LOG_ERR, "sync ret %d errno %d,%s", ret, errno, strerror(errno));</span></span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    setp(pbase(), pbase() + buf_size_);</span><br><span class="line">    pbump(<span class="number">0</span>);  </span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">int</span> BaseTcpStreamBuf::overflow(<span class="keyword">int</span> c) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == sync()) &#123;</span><br><span class="line">        <span class="keyword">return</span> traits_type::eof();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;  <span class="comment">//数据已发送，放入c</span></span><br><span class="line">        <span class="keyword">if</span> (!traits_type::eq_int_type(c, traits_type::eof())) &#123;</span><br><span class="line">            sputc(traits_type::to_char_type(c));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> traits_type::not_eof(c);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>

@@ -10,19 +10,19 @@
 <title>PhxRPC源码分析（三） RPC - Nickqiao&#39;s blog</title>
 
 
-    <meta name="description" content="RPC整个RPC的定义基本都在hsha_server这个文件。主要有一下几个类：  DataFlow ：数据流，所有请求和应答分别保存在两个线程安全的队列中。 HshaServerStat HshaServerQos： 统计运行状态，独立线程。 Worker ：独立的工作线程，如果是协程模式，每个worker会有多个协程。 WorkerPool：工作池，管理Worker。 HshaServerUn">
+    <meta name="description" content="RPC最后这篇文章分析一下整体消息收发处理的逻辑。">
 <meta name="keywords" content="PhxRPC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="PhxRPC源码分析（三） RPC">
 <meta property="og:url" content="http://nickqiaoo.github.io/2018/10/29/phxrpc-overview/index.html">
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
-<meta property="og:description" content="RPC整个RPC的定义基本都在hsha_server这个文件。主要有一下几个类：  DataFlow ：数据流，所有请求和应答分别保存在两个线程安全的队列中。 HshaServerStat HshaServerQos： 统计运行状态，独立线程。 Worker ：独立的工作线程，如果是协程模式，每个worker会有多个协程。 WorkerPool：工作池，管理Worker。 HshaServerUn">
+<meta property="og:description" content="RPC最后这篇文章分析一下整体消息收发处理的逻辑。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-03-10T08:53:33.931Z">
+<meta property="og:updated_time" content="2020-03-10T10:10:16.441Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PhxRPC源码分析（三） RPC">
-<meta name="twitter:description" content="RPC整个RPC的定义基本都在hsha_server这个文件。主要有一下几个类：  DataFlow ：数据流，所有请求和应答分别保存在两个线程安全的队列中。 HshaServerStat HshaServerQos： 统计运行状态，独立线程。 Worker ：独立的工作线程，如果是协程模式，每个worker会有多个协程。 WorkerPool：工作池，管理Worker。 HshaServerUn">
+<meta name="twitter:description" content="RPC最后这篇文章分析一下整体消息收发处理的逻辑。">
 <meta name="twitter:image" content="http://nickqiaoo.github.io/images/og_image.png">
 
 
@@ -108,14 +108,6 @@
             
             <div class="navbar-end">
                 
-                    
-                    <a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
-                        
-                        <i class="fab fa-github"></i>
-                        
-                    </a>
-                    
-                
                 
                 <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
                     <i class="fas fa-list-ul"></i>
@@ -151,7 +143,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    7 分钟 读完 (大约 1032 个字)
+                    7 分钟 读完 (大约 1055 个字)
                 </span>
                 
                 
@@ -164,7 +156,8 @@
             
         </h1>
         <div class="content">
-            <h2 id="RPC"><a href="#RPC" class="headerlink" title="RPC"></a>RPC</h2><p>整个RPC的定义基本都在<code>hsha_server</code>这个文件。主要有一下几个类：</p>
+            <h2 id="RPC"><a href="#RPC" class="headerlink" title="RPC"></a>RPC</h2><p>最后这篇文章分析一下整体消息收发处理的逻辑。<br><a id="more"></a></p>
+<p>整个RPC的定义基本都在<code>hsha_server</code>这个文件。主要有一下几个类：</p>
 <ul>
 <li><code>DataFlow</code> ：数据流，所有请求和应答分别保存在两个线程安全的队列中。</li>
 <li><code>HshaServerStat</code> <code>HshaServerQos</code>： 统计运行状态，独立线程。</li>

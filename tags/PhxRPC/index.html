@@ -103,14 +103,6 @@
             
             <div class="navbar-end">
                 
-                    
-                    <a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
-                        
-                        <i class="fab fa-github"></i>
-                        
-                    </a>
-                    
-                
                 
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
@@ -153,7 +145,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    7 分钟 读完 (大约 1032 个字)
+                    7 分钟 读完 (大约 1055 个字)
                 </span>
                 
                 
@@ -166,42 +158,17 @@
             
         </h1>
         <div class="content">
-            <h2 id="RPC"><a href="#RPC" class="headerlink" title="RPC"></a>RPC</h2><p>整个RPC的定义基本都在<code>hsha_server</code>这个文件。主要有一下几个类：</p>
-<ul>
-<li><code>DataFlow</code> ：数据流，所有请求和应答分别保存在两个线程安全的队列中。</li>
-<li><code>HshaServerStat</code> <code>HshaServerQos</code>： 统计运行状态，独立线程。</li>
-<li><code>Worker</code> ：独立的工作线程，如果是协程模式，每个<code>worker</code>会有多个协程。</li>
-<li><code>WorkerPool</code>：工作池，管理<code>Worker</code>。</li>
-<li><code>HshaServerUnit</code>：独立线程的工作单元，每个单元都有一个<code>WorkerPool</code> ,<code>UThreadEpollScheduler</code>和 <code>DataFlow</code>。</li>
-<li><code>HshaServerIO</code>：在<code>HshaServerUnit</code>线程处理IO事件。</li>
-<li><code>HshaServer</code>：server对象，有多个工作单元。</li>
-<li><code>HshaServerAcceptor</code>：接受连接，工作在主线程。</li>
-</ul>
-<p>运行起来有一个accept线程，每个unit有一个IO线程，多个worker线程。</p>
-<p>各个模块之间的关系如下</p>
-<p><img src="http://blog-1252613135.cosbj.myqcloud.com/RPC.png" alt="这里写图片描述"></p>
-<h2 id="DataFlow"><a href="#DataFlow" class="headerlink" title="DataFlow"></a>DataFlow</h2><p><code>DataFlow</code>包含request和response队列，并附加了时间戳和参数指针。</p>
-<h2 id="HshaServerStat-HshaServerQos"><a href="#HshaServerStat-HshaServerQos" class="headerlink" title="HshaServerStat HshaServerQos"></a>HshaServerStat HshaServerQos</h2><p>独立线程负责统计运行信息，线程绑定为<code>CallFunc</code>函数，使用了设置超时时间的条件变量，超时时间为1s，这样如果没有通知则每秒统计一次。</p>
-<h2 id="Worker"><a href="#Worker" class="headerlink" title="Worker"></a>Worker</h2><p>独立工作线程，绑定为<code>Worker::Func</code><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Worker::Func() &#123;</span><br><span class="line">    <span class="keyword">if</span> (uthread_count_ == <span class="number">0</span>) &#123;  <span class="comment">//如果没有设置协程数量</span></span><br><span class="line">        ThreadMode();  <span class="comment">//线程模式</span></span><br><span class="line">     &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        UThreadMode();  <span class="comment">//协程模式</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>线程模式直接从<code>DataFlow</code>中拉一个request然后执行<code>WorkerLogic</code>。<br>协程模式创建一个调度器并设置处理新请求的函数。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Worker::UThreadMode() &#123;</span><br><span class="line">    worker_scheduler_ = <span class="keyword">new</span> UThreadEpollScheduler(utherad_stack_size_, uthread_count_, <span class="literal">true</span>);</span><br><span class="line">    assert(worker_scheduler_ != <span class="literal">nullptr</span>);</span><br><span class="line">    worker_scheduler_-&gt;SetHandlerNewRequestFunc(bind(&amp;Worker::HandlerNewRequestFunc, <span class="keyword">this</span>));</span><br><span class="line">    worker_scheduler_-&gt;RunForever();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p><code>HandlerNewRequestFunc</code>会将<code>WorkerLogic</code>的包装<code>UThreadFunc</code>加入调度器的任务队列。<br><code>WorkerLogic</code>是真正处理逻辑的函数，对没有超时的请求，会分发到具体的函数处理，最后将结果push到response队列中。</p>
-<h2 id="WorkPool"><a href="#WorkPool" class="headerlink" title="WorkPool"></a>WorkPool</h2><p><code>WorkPool</code>负责创建<code>Worker</code>。</p>
-<h2 id="HshaServerIO"><a href="#HshaServerIO" class="headerlink" title="HshaServerIO"></a>HshaServerIO</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> HshaServerIO::RunForever() &#123;</span><br><span class="line">    scheduler_-&gt;SetHandlerAcceptedFdFunc(bind(&amp;HshaServerIO::HandlerAcceptedFd, <span class="keyword">this</span>));</span><br><span class="line">    scheduler_-&gt;SetActiveSocketFunc(bind(&amp;HshaServerIO::ActiveSocketFunc, <span class="keyword">this</span>));</span><br><span class="line">    scheduler_-&gt;RunForever();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>RunForever</code>设置<code>Run</code>中执行的两个回调函数分别处理新建连接和写response</p>
-<p><code>AddAcceptedFd</code>函数负责将已连接的fd放入<code>accepted_fd_list_</code>中。</p>
-<p><code>HandlerAcceptedFd</code>函数从队列中取出已连接的fd，并绑定<code>IOFunc</code>函数加入协程调度器的任务队列。</p>
-<p><code>IOFunc</code>函数新建一个关联socketfd的<code>UThreadTcpStream</code>，然后判断请求协议的类型并解析请求，将解析完成的request push到<code>DataFlow</code>中，<br>然后调用<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">worker_pool_-&gt;Notify();</span><br></pre></td></tr></table></figure></p>
-<p>这一步针对<code>UThreadMode</code>，worker_pool的<code>Notify</code>函数会调用worker的<code>Notify</code>来通知worker的<code>UThreadEpollScheduler</code>，接下来<code>IOFunc</code>调用<code>UThreadWait</code>设置一个超时时间<code>Yield</code>出去。</p>
-<p>此时worker的<code>UThreadEpollScheduler</code>在<code>Run</code>函数处轮询，接下来会执行开启<code>UThreadMode</code>时绑定的<code>handler_new_request_func_</code>也就是<code>Worker::HandlerNewRequestFunc</code>，这个函数将从<code>DataFlow</code>中拉取request然后将<code>WorkerLogic</code>加入<code>worker_scheduler_</code>的任务队列。这样开始执行<code>WorkerLogic</code>，执行完逻辑后<code>WorkerLogic</code>将response加入<code>DataFlow</code>的队列中。最后执行<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pool_-&gt;scheduler_-&gt;NotifyEpoll();</span><br></pre></td></tr></table></figure></p>
-<p>这一步调用worker_pool_的<code>UThreadEpollScheduler</code>的<code>NotifyEpoll</code>，接下来流程回到pool_-&gt;scheduler_的<code>Run</code>中，此时执行<code>active_socket_func_</code>从<code>DataFlow</code>中取出response，将其包装为该socket的args并返回，最后<code>Resume</code>到此socket的协程也就是之前的<code>IOFunc</code>，将response <code>send</code>出去。</p>
-<p>这个应该是整个流程最复杂的一个函数了，主要是worker线程和workpool的<code>UThreadEpollScheduler</code>的互相唤醒。一次完整的收发数据流程如下：</p>
-<p><img src="http://blog-1252613135.cosbj.myqcloud.com/PhxRPC.png" alt="这里写图片描述"></p>
-<h2 id="HshaServerUnit"><a href="#HshaServerUnit" class="headerlink" title="HshaServerUnit"></a>HshaServerUnit</h2><p><code>HshaServerUnit</code>是IO线程，其<code>RunFunc</code> <code>AddAcceptedFd</code>调用的都是成员<code>HshaServerIO</code>的相应函数。</p>
-<h2 id="HshaServerAcceptor"><a href="#HshaServerAcceptor" class="headerlink" title="HshaServerAcceptor"></a>HshaServerAcceptor</h2><p><code>HshaServerAcceptor</code>的<code>LoopAccept</code>函数负责accept新连接，<code>idx_</code>变量通过每次取余的方式来确定将accept的fd放到哪个<code>HshaServerUnit</code>。</p>
-<h2 id="HshaServer"><a href="#HshaServer" class="headerlink" title="HshaServer"></a>HshaServer</h2><p><code>HshaServer</code>获取配置文件中的IO线程数量创建相同数量的<code>HshaServerUnit</code>，根据配置文件的工作线程数量初始化其参数，然后push到<code>server_unit_list_</code>中。</p>
-
+            <h2 id="RPC"><a href="#RPC" class="headerlink" title="RPC"></a>RPC</h2><p>最后这篇文章分析一下整体消息收发处理的逻辑。<br>
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2018/10/29/phxrpc-overview/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
@@ -284,7 +251,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    5 分钟 读完 (大约 676 个字)
+                    5 分钟 读完 (大约 727 个字)
                 </span>
                 
                 
@@ -297,17 +264,17 @@
             
         </h1>
         <div class="content">
-            <h2 id="phxrpc简介"><a href="#phxrpc简介" class="headerlink" title="phxrpc简介"></a>phxrpc简介</h2><p>phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。</p>
-<h2 id="定制输入输出流"><a href="#定制输入输出流" class="headerlink" title="定制输入输出流"></a>定制输入输出流</h2><p>phxrpc使用标准输入输出的方式封装了socket，使用<code>&lt;&lt;</code>和<code>&gt;&gt;</code>来实现读写。<br>实现类图如下：<br><img src="http://blog-1252613135.cosbj.myqcloud.com/socket_stream.png" alt="这里写图片描述"></p>
-<h2 id="streambuf"><a href="#streambuf" class="headerlink" title="streambuf"></a>streambuf</h2><p><code>streambuf</code>是一个流缓冲区，包含输入和输出缓冲区。向<code>ostream</code>写入时，数据会放到输出缓冲区中，从<code>istream</code>读取时，数据从输入缓冲区中读出。<br><img src="http://upload.cppreference.com/mwiki/images/7/75/std-streambuf.svg" alt="这里写图片描述"></p>
-<h2 id="streambuf输出缓冲区"><a href="#streambuf输出缓冲区" class="headerlink" title="streambuf输出缓冲区"></a>streambuf输出缓冲区</h2><p>输出缓冲区由三个指针维护，<code>pbase</code>指向起始位置，<code>epptr</code>指向末尾（类似迭代器，前闭后开），<code>pptr</code>指向当前可放置的位置。向输出缓冲区写入数据的函数是<code>sputc</code>和<code>sputn</code>，第一个写入一个字符并将<code>pptr</code>向后移动一位。第二个写入多个字符。当缓冲区满时，会调用<code>overflow()</code>函数将所有数据发送并清空缓冲区，调用<code>pbump(0)</code>重置pptr指针到起始位置。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> BaseTcpStreamBuf::sync() &#123; <span class="comment">//缓冲区已满，将数据发送</span></span><br><span class="line">    <span class="keyword">int</span> sent = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> total = pptr() - pbase();</span><br><span class="line">    <span class="keyword">while</span> (sent &lt; total) &#123;</span><br><span class="line">        <span class="keyword">int</span> ret = psend(pbase() + sent, total - sent, <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (ret &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            sent += ret;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">//phxrpc::log(LOG_ERR, "sync ret %d errno %d,%s", ret, errno, strerror(errno));</span></span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    setp(pbase(), pbase() + buf_size_);</span><br><span class="line">    pbump(<span class="number">0</span>);  </span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">int</span> BaseTcpStreamBuf::overflow(<span class="keyword">int</span> c) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == sync()) &#123;</span><br><span class="line">        <span class="keyword">return</span> traits_type::eof();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;  <span class="comment">//数据已发送，放入c</span></span><br><span class="line">        <span class="keyword">if</span> (!traits_type::eq_int_type(c, traits_type::eof())) &#123;</span><br><span class="line">            sputc(traits_type::to_char_type(c));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> traits_type::not_eof(c);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h2 id="streambuf输入缓冲区"><a href="#streambuf输入缓冲区" class="headerlink" title="streambuf输入缓冲区"></a>streambuf输入缓冲区</h2><p>输入缓冲区同样由三个指针维护，分别是<code>eback</code>，<code>gptr</code>，<code>egptr</code>。<code>gptr</code>指向当前可读的位置，如果<code>gptr()==egptr()</code>说明数据已读完，此时会调用<code>underflow()</code>从socket中接受数据并重置指针。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> BaseTcpStreamBuf::underflow() &#123;</span><br><span class="line">    <span class="keyword">int</span> ret = precv(eback(), buf_size_, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (ret &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        setg(eback(), eback(), eback() + ret);  <span class="comment">//重置指针</span></span><br><span class="line">        <span class="keyword">return</span> traits_type::to_int_type(*gptr());</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">//phxrpc::log(LOG_ERR, "ret %d errno %d,%s", ret, errno, strerror(errno));</span></span><br><span class="line">        <span class="keyword">return</span> traits_type::eof();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
-<h2 id="BlockTcpStream"><a href="#BlockTcpStream" class="headerlink" title="BlockTcpStream"></a>BlockTcpStream</h2><p>这个类实现了一个阻塞TCP流，使用<code>Attach()</code>调用父类的<code>NewRdBuf()</code>绑定一个<code>streambuf</code>。网络IO交给<code>BlockTcpStreamBuf</code>来做。</p>
-<h2 id="BlockTcpUtils"><a href="#BlockTcpUtils" class="headerlink" title="BlockTcpUtils"></a>BlockTcpUtils</h2><p><code>BlockTcpUtils</code>这个工具类封装了网络连接的操作。<code>Open()</code>由客户端调用，<code>Listen()</code>由服务端调用。</p>
-<p>在<code>Open()</code>函数中调用<code>connect()</code>之前将socketfd设为非阻塞。为了验证非阻塞connect是否成功，需要<code>select()</code>或<code>poll()</code>一下看是否可写然后调用<code>getsockopt()</code>检查（man connect 中提到）。完成连接后再将sockfd设为阻塞。</p>
-
+            <h2 id="phxrpc简介"><a href="#phxrpc简介" class="headerlink" title="phxrpc简介"></a>phxrpc简介</h2><p>phxrpc是微信开源的轻量级rpc框架，支持协程模式，代码量不大，很适合拿来学习一个。这个框架用了流式操作，很有特点。之前总听人说iostream操作慢，没有研究过流操作底层的实现，今天就来分析一下。<br>
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2018/10/29/phxrpc-tcpstream/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
