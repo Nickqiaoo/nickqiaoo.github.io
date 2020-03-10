@@ -7,14 +7,14 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>Tag: PhxRPC - Nickqiao&#39;s blog</title>
+<title>标签: PhxRPC - Nickqiao&#39;s blog</title>
 
 
     <meta property="og:type" content="website">
 <meta property="og:title" content="Nickqiao&#39;s blog">
 <meta property="og:url" content="http://nickqiaoo.github.io/tags/PhxRPC/index.html">
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
-<meta property="og:locale" content="zh-Hans">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Nickqiao&#39;s blog">
@@ -113,7 +113,7 @@
                 
                 
                 
-                <a class="navbar-item search" title="Suche" href="javascript:;">
+                <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
                 </a>
                 
@@ -129,7 +129,7 @@
     <div class="card-content">
         <nav class="breadcrumb" aria-label="breadcrumbs">
         <ul>
-            <li><a href="/tags">Tags</a></li>
+            <li><a href="/tags">标签</a></li>
             <li class="is-active"><a href="#" aria-current="page">PhxRPC</a></li>
         </ul>
         </nav>
@@ -153,7 +153,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    7 minutes lesen (Über 1032 Worte)
+                    7 分钟 读完 (大约 1032 个字)
                 </span>
                 
                 
@@ -231,7 +231,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    8 minutes lesen (Über 1154 Worte)
+                    8 分钟 读完 (大约 1155 个字)
                 </span>
                 
                 
@@ -245,18 +245,16 @@
         </h1>
         <div class="content">
             <h2 id="uthread"><a href="#uthread" class="headerlink" title="uthread"></a>uthread</h2><p>协程的概念在<a href="http://blog.csdn.net/LMFQYJ/article/details/79211084">coroutine源码分析</a>中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。</p>
-<h2 id="UThreadContext"><a href="#UThreadContext" class="headerlink" title="UThreadContext"></a>UThreadContext</h2><p><code>UThreadContext</code>是定义了协程接口的基类，并且有一个静态函数对象，用来创建协程上下文，其应该是子类的<code>DoCreate</code>函数，</p>
-<h2 id="UThreaStackMemory"><a href="#UThreaStackMemory" class="headerlink" title="UThreaStackMemory"></a>UThreaStackMemory</h2><p><code>UThreaStackMemory</code>是每个协程的私有栈，这里并没有实现共享栈模式，节省了拷贝，而且内存分配也没有使用<code>malloc</code>，而是使用的<code>mmap</code>，这里设置了一个标志变量<code>need_protect_</code>来选择是否开启保护模式，开启保护模式会在栈两端各多分配一页，并将这两页设置<code>PROT_NONE</code>属性禁止访问。调用<code>mmap</code>时同时设置了<code>MAP_ANONYMOUS | MAP_PRIVATE</code>,<code>MAP_ANONYMOUS</code>表示这段内存是匿名的，不需要读写fd。<code>MAP_PRIVATE</code>建立一个私有映射，不与其他进程共享。</p>
-<h2 id="UThreadContextSystem"><a href="#UThreadContextSystem" class="headerlink" title="UThreadContextSystem"></a>UThreadContextSystem</h2><p><code>UThreadContextSystem</code>是默认的使用ucontext作实现的协程上下文。每个上下文维护一个<code>context_</code>表示协程的上下文，同时还有一个<code>static __thread</code>修饰的<code>main_context_</code>,表示每个线程只有一个，协程<code>yield</code>的时候会切换到这个上下文。<br><code>Resume</code>函数切换到一个协程，<code>Yield</code>函数切出当前协程。<br><code>UThreadFuncWrapper</code>包装了协程的执行函数，协程运行时会切换到这个函数，函数的参数就是this指针，之后调用绑定的执行函数<code>UThreadFunc_t</code>和回调函数<code>UThreadDoneCallback_t</code>。<br>这里之所以将指针拆成两个32位是因为<code>setcontext</code>接受的是<code>int</code>类型的参数。</p>
-<h2 id="UThreadRuntime"><a href="#UThreadRuntime" class="headerlink" title="UThreadRuntime"></a>UThreadRuntime</h2><p><code>UThreadRuntime</code>封装了协程的调度，<code>context_list_</code>保存所有协程上下文，这里把每个上下文封装成一个<code>ContextSlot</code>，其中的<code>next_done_item</code>保存下一个可用的slot下标。<br><code>first_done_item_</code>可以看做始终保存一个已经完成的上下文的下标。<code>Create</code>函数创建一个上下文，首先检查<code>first_done_item_</code>是否大于0 ，如果是说明此时有执行完的协程，更新<code>first_done_item_</code>的值然后直接更换此协程的上下文。<code>UThreadDoneCallback</code>回调将当前<code>first_done_item_</code>保存到<code>next_done_item</code>，然后将其更新为自身。这样实现了上下文的复用。<br><code>Yield</code>和<code>Resume</code>封装了<code>UThreadContext</code>对应的操作。</p>
-<h2 id="UThreadEpollScheduler"><a href="#UThreadEpollScheduler" class="headerlink" title="UThreadEpollScheduler"></a>UThreadEpollScheduler</h2><p><code>UThreadEpollScheduler</code>封装了epoll驱动的协程调度，<code>UThreadSocket_t</code>封装了socket及其他相关资源。<br>我们主要分析一下<code>RunForever</code>函数的执行过程。<br><code>RunForever</code>首先会调用<code>EpollNotifier</code>的<code>Run</code>函数，<code>Run</code>函数会将其<code>Func</code>函数加入调度器的任务队列，<code>Func</code>函数会去读管道，这样做是为了唤醒epoll。<br>接下来调用<code>ConsumeTodoList</code>函数，会将任务队列中的函数创建为协程，并<code>Resume</code>切换到协程，协程中会将fd相应的操作在epoll中注册然后<code>Yield</code>回到<code>Run</code>。之后<code>Run</code>函数调用<code>epoll_wait</code>检查活动的fd，并<code>Resume</code>到活动fd的协程进行IO操作。这样实现了异步操作。<br>处理完活动的事件后，还会不断调用<code>active_socket_func_()</code>继续<code>Resume</code>。<br>最后执行新建连接的回调并处理超时事件。<br>主要的执行流程如下：<br><img src="http://blog-1252613135.cosbj.myqcloud.com/UThreadEpollScheduler.png" alt="这里写图片描述"></p>
-<h2 id="UTreadPoll"><a href="#UTreadPoll" class="headerlink" title="UTreadPoll"></a>UTreadPoll</h2><p><code>UTreadPoll</code>有两个版本，分别poll一个和一组socket，主要功能就是epoll_ctl注册对应事件后<code>Yield</code>，<code>Resume</code>回来后删除注册。</p>
-<p>当poll一组socket时的实现比较特殊，首先<code>epoll_create</code>一个新的<code>epollfd</code>，将所有的socket注册到新的<code>epollfd</code>中，然后新建一个<code>UThreadSocket_t</code>将其中的<code>socketfd</code>设为刚才新建的<code>epollfd</code>，并注册到调度器的<code>epoll</code>中，这样新建的<code>epoll</code>有活动事件时会触发调度器的<code>epoll</code> <code>Resume</code>回来，注意此时对新建的<code>epollfd</code>执行<code>epoll_wait</code>的超时参数设为0，因为一定有活动的事件。<br><code>UThreadAccept</code>，<code>UThreadRead</code>等函数都是利用UThreadPoll改造的IO函数，比较简单。</p>
-<h2 id="uthread-1"><a href="#uthread-1" class="headerlink" title="__uthread"></a>__uthread</h2><p><code>__uthread</code>重载了<code>-</code>操作符，来实现使用<code>uthread_t</code>将协程加入调度器任务队列。</p>
-<p><code>uthread_begin</code>, <code>uthread_end</code>, <code>uthread_s</code>, <code>uthread_t</code>这几个自定义的宏，分别表示协程的准备，结束，协程调度器以及协程的创建。</p>
-
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2018/10/29/uthread-context/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
@@ -286,7 +284,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    5 minutes lesen (Über 676 Worte)
+                    5 分钟 读完 (大约 676 个字)
                 </span>
                 
                 
@@ -347,7 +345,7 @@
                     
                     
                     <p class="is-size-6 is-block">
-                        Your title
+                        Naive
                     </p>
                     
                     
@@ -363,7 +361,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Posts
+                        文章
                     </p>
                     <a href="/archives">
                         <p class="title has-text-weight-normal">
@@ -375,7 +373,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Kategorien
+                        分类
                     </p>
                     <a href="/categories">
                         <p class="title has-text-weight-normal">
@@ -387,7 +385,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Tags
+                        标签
                     </p>
                     <a href="/tags">
                         <p class="title has-text-weight-normal">
@@ -400,7 +398,7 @@
         
         <div class="level">
             <a class="level-item button is-link is-rounded" href="https://github.com/Nickqiaoo" target="_blank" rel="noopener">
-                Folgen</a>
+                关注我</a>
         </div>
         
         
@@ -411,34 +409,6 @@
                 title="Github" href="https://github.com/Nickqiaoo">
                 
                 <i class="fab fa-github"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Facebook" href="https://facebook.com">
-                
-                <i class="fab fa-facebook"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Twitter" href="https://twitter.com">
-                
-                <i class="fab fa-twitter"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Dribbble" href="https://dribbble.com">
-                
-                <i class="fab fa-dribbble"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="RSS" href="/">
-                
-                <i class="fas fa-rss"></i>
                 
             </a>
             
@@ -457,7 +427,7 @@
     <div class="card-content">
         <div class="menu">
             <h3 class="menu-label">
-                Kategorien
+                分类
             </h3>
             <ul class="menu-list">
             <li>
@@ -502,14 +472,14 @@
     <div class="card-content">
         <div class="menu">
         <h3 class="menu-label">
-            Archive
+            归档
         </h3>
         <ul class="menu-list">
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
                 <span class="level-start">
-                    <span class="level-item">January 2020</span>
+                    <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">1</span>
@@ -520,7 +490,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2019/11/">
                 <span class="level-start">
-                    <span class="level-item">November 2019</span>
+                    <span class="level-item">十一月 2019</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">2</span>
@@ -531,7 +501,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2018/10/">
                 <span class="level-start">
-                    <span class="level-item">October 2018</span>
+                    <span class="level-item">十月 2018</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">4</span>
@@ -547,7 +517,7 @@
             <div class="card widget">
     <div class="card-content">
         <h3 class="menu-label">
-            Tag Cloud
+            标签云
         </h3>
         <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
@@ -569,7 +539,7 @@
     <div class="card-content">
         <div class="menu">
             <h3 class="menu-label">
-                Kategorien
+                分类
             </h3>
             <ul class="menu-list">
             <li>
@@ -614,14 +584,14 @@
     <div class="card-content">
         <div class="menu">
         <h3 class="menu-label">
-            Archive
+            归档
         </h3>
         <ul class="menu-list">
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
                 <span class="level-start">
-                    <span class="level-item">January 2020</span>
+                    <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">1</span>
@@ -632,7 +602,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2019/11/">
                 <span class="level-start">
-                    <span class="level-item">November 2019</span>
+                    <span class="level-item">十一月 2019</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">2</span>
@@ -643,7 +613,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2018/10/">
                 <span class="level-start">
-                    <span class="level-item">October 2018</span>
+                    <span class="level-item">十月 2018</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">4</span>
@@ -659,7 +629,7 @@
         <div class="card widget">
     <div class="card-content">
         <h3 class="menu-label">
-            Tag Cloud
+            标签云
         </h3>
         <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
@@ -723,7 +693,7 @@
 </footer>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
-<script>moment.locale("zh-Hans");</script>
+<script>moment.locale("zh-CN");</script>
 
 
 <script>
@@ -800,7 +770,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<a id="back-to-top" title="Zurück nach oben" href="javascript:;">
+<a id="back-to-top" title="回到顶端" href="javascript:;">
     <i class="fas fa-chevron-up"></i>
 </a>
 <script src="/js/back-to-top.js" defer></script>
@@ -824,7 +794,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="searchbox ins-search">
     <div class="searchbox-container ins-search-container">
         <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Tippen Sie etwas..." />
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
             <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
         </div>
         <div class="searchbox-result-wrapper ins-section-wrapper">
@@ -836,11 +806,11 @@ document.addEventListener('DOMContentLoaded', function () {
     (function (window) {
         var INSIGHT_CONFIG = {
             TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Seiten',
-                CATEGORIES: 'Kategorien',
-                TAGS: 'Tags',
-                UNTITLED: '(Unbenannt)',
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
             },
             CONTENT_URL: '/content.json',
         };
@@ -851,5 +821,5 @@ document.addEventListener('DOMContentLoaded', function () {
 <link rel="stylesheet" href="/css/search.css">
 <link rel="stylesheet" href="/css/insight.css">
     
-<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"right","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
 </html>

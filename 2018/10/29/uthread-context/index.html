@@ -10,19 +10,19 @@
 <title>PhxRPC源码分析（二）uthread_context - Nickqiao&#39;s blog</title>
 
 
-    <meta name="description" content="uthread协程的概念在coroutine源码分析中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。 UThreadContextUThreadContext是定义了协程接口的基类，并且有一个静态函数对象，用来创建协程上下文，其应该是子类的DoCreate函数， UThreaStackMemoryUThreaStackMemory是每个协程的私有栈，这里并没有实现">
+    <meta name="description" content="uthread协程的概念在coroutine源码分析中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。">
 <meta name="keywords" content="PhxRPC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="PhxRPC源码分析（二）uthread_context">
 <meta property="og:url" content="http://nickqiaoo.github.io/2018/10/29/uthread-context/index.html">
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
-<meta property="og:description" content="uthread协程的概念在coroutine源码分析中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。 UThreadContextUThreadContext是定义了协程接口的基类，并且有一个静态函数对象，用来创建协程上下文，其应该是子类的DoCreate函数， UThreaStackMemoryUThreaStackMemory是每个协程的私有栈，这里并没有实现">
-<meta property="og:locale" content="zh-Hans">
+<meta property="og:description" content="uthread协程的概念在coroutine源码分析中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-03-10T08:22:45.423Z">
+<meta property="og:updated_time" content="2020-03-10T08:53:33.931Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PhxRPC源码分析（二）uthread_context">
-<meta name="twitter:description" content="uthread协程的概念在coroutine源码分析中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。 UThreadContextUThreadContext是定义了协程接口的基类，并且有一个静态函数对象，用来创建协程上下文，其应该是子类的DoCreate函数， UThreaStackMemoryUThreaStackMemory是每个协程的私有栈，这里并没有实现">
+<meta name="twitter:description" content="uthread协程的概念在coroutine源码分析中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。">
 <meta name="twitter:image" content="http://nickqiaoo.github.io/images/og_image.png">
 
 
@@ -117,12 +117,12 @@
                     
                 
                 
-                <a class="navbar-item is-hidden-tablet catalogue" title="Katalog" href="javascript:;">
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
                     <i class="fas fa-list-ul"></i>
                 </a>
                 
                 
-                <a class="navbar-item search" title="Suche" href="javascript:;">
+                <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
                 </a>
                 
@@ -151,7 +151,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    8 minutes lesen (Über 1154 Worte)
+                    8 分钟 读完 (大约 1155 个字)
                 </span>
                 
                 
@@ -165,6 +165,7 @@
         </h1>
         <div class="content">
             <h2 id="uthread"><a href="#uthread" class="headerlink" title="uthread"></a>uthread</h2><p>协程的概念在<a href="http://blog.csdn.net/LMFQYJ/article/details/79211084">coroutine源码分析</a>中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。</p>
+<a id="more"></a>
 <h2 id="UThreadContext"><a href="#UThreadContext" class="headerlink" title="UThreadContext"></a>UThreadContext</h2><p><code>UThreadContext</code>是定义了协程接口的基类，并且有一个静态函数对象，用来创建协程上下文，其应该是子类的<code>DoCreate</code>函数，</p>
 <h2 id="UThreaStackMemory"><a href="#UThreaStackMemory" class="headerlink" title="UThreaStackMemory"></a>UThreaStackMemory</h2><p><code>UThreaStackMemory</code>是每个协程的私有栈，这里并没有实现共享栈模式，节省了拷贝，而且内存分配也没有使用<code>malloc</code>，而是使用的<code>mmap</code>，这里设置了一个标志变量<code>need_protect_</code>来选择是否开启保护模式，开启保护模式会在栈两端各多分配一页，并将这两页设置<code>PROT_NONE</code>属性禁止访问。调用<code>mmap</code>时同时设置了<code>MAP_ANONYMOUS | MAP_PRIVATE</code>,<code>MAP_ANONYMOUS</code>表示这段内存是匿名的，不需要读写fd。<code>MAP_PRIVATE</code>建立一个私有映射，不与其他进程共享。</p>
 <h2 id="UThreadContextSystem"><a href="#UThreadContextSystem" class="headerlink" title="UThreadContextSystem"></a>UThreadContextSystem</h2><p><code>UThreadContextSystem</code>是默认的使用ucontext作实现的协程上下文。每个上下文维护一个<code>context_</code>表示协程的上下文，同时还有一个<code>static __thread</code>修饰的<code>main_context_</code>,表示每个线程只有一个，协程<code>yield</code>的时候会切换到这个上下文。<br><code>Resume</code>函数切换到一个协程，<code>Yield</code>函数切出当前协程。<br><code>UThreadFuncWrapper</code>包装了协程的执行函数，协程运行时会切换到这个函数，函数的参数就是this指针，之后调用绑定的执行函数<code>UThreadFunc_t</code>和回调函数<code>UThreadDoneCallback_t</code>。<br>这里之所以将指针拆成两个32位是因为<code>setcontext</code>接受的是<code>int</code>类型的参数。</p>
@@ -242,7 +243,7 @@
                     
                     
                     <p class="is-size-6 is-block">
-                        Your title
+                        Naive
                     </p>
                     
                     
@@ -258,7 +259,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Posts
+                        文章
                     </p>
                     <a href="/archives">
                         <p class="title has-text-weight-normal">
@@ -270,7 +271,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Kategorien
+                        分类
                     </p>
                     <a href="/categories">
                         <p class="title has-text-weight-normal">
@@ -282,7 +283,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Tags
+                        标签
                     </p>
                     <a href="/tags">
                         <p class="title has-text-weight-normal">
@@ -295,7 +296,7 @@
         
         <div class="level">
             <a class="level-item button is-link is-rounded" href="https://github.com/Nickqiaoo" target="_blank" rel="noopener">
-                Folgen</a>
+                关注我</a>
         </div>
         
         
@@ -306,34 +307,6 @@
                 title="Github" href="https://github.com/Nickqiaoo">
                 
                 <i class="fab fa-github"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Facebook" href="https://facebook.com">
-                
-                <i class="fab fa-facebook"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Twitter" href="https://twitter.com">
-                
-                <i class="fab fa-twitter"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Dribbble" href="https://dribbble.com">
-                
-                <i class="fab fa-dribbble"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="RSS" href="/">
-                
-                <i class="fas fa-rss"></i>
                 
             </a>
             
@@ -348,7 +321,7 @@
         <div class="card-content">
             <div class="menu">
                 <h3 class="menu-label">
-                    Katalog
+                    目录
                 </h3>
                 <ul class="menu-list"><li>
         <a class="is-flex" href="#uthread">
@@ -396,7 +369,7 @@
     <div class="card-content">
         <div class="menu">
             <h3 class="menu-label">
-                Kategorien
+                分类
             </h3>
             <ul class="menu-list">
             <li>
@@ -441,14 +414,14 @@
     <div class="card-content">
         <div class="menu">
         <h3 class="menu-label">
-            Archive
+            归档
         </h3>
         <ul class="menu-list">
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
                 <span class="level-start">
-                    <span class="level-item">January 2020</span>
+                    <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">1</span>
@@ -459,7 +432,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2019/11/">
                 <span class="level-start">
-                    <span class="level-item">November 2019</span>
+                    <span class="level-item">十一月 2019</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">2</span>
@@ -470,7 +443,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2018/10/">
                 <span class="level-start">
-                    <span class="level-item">October 2018</span>
+                    <span class="level-item">十月 2018</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">4</span>
@@ -486,7 +459,7 @@
             <div class="card widget">
     <div class="card-content">
         <h3 class="menu-label">
-            Tag Cloud
+            标签云
         </h3>
         <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
@@ -508,7 +481,7 @@
     <div class="card-content">
         <div class="menu">
             <h3 class="menu-label">
-                Kategorien
+                分类
             </h3>
             <ul class="menu-list">
             <li>
@@ -553,14 +526,14 @@
     <div class="card-content">
         <div class="menu">
         <h3 class="menu-label">
-            Archive
+            归档
         </h3>
         <ul class="menu-list">
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
                 <span class="level-start">
-                    <span class="level-item">January 2020</span>
+                    <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">1</span>
@@ -571,7 +544,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2019/11/">
                 <span class="level-start">
-                    <span class="level-item">November 2019</span>
+                    <span class="level-item">十一月 2019</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">2</span>
@@ -582,7 +555,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2018/10/">
                 <span class="level-start">
-                    <span class="level-item">October 2018</span>
+                    <span class="level-item">十月 2018</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">4</span>
@@ -598,7 +571,7 @@
         <div class="card widget">
     <div class="card-content">
         <h3 class="menu-label">
-            Tag Cloud
+            标签云
         </h3>
         <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
@@ -662,7 +635,7 @@
 </footer>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
-<script>moment.locale("zh-Hans");</script>
+<script>moment.locale("zh-CN");</script>
 
 
 <script>
@@ -739,7 +712,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<a id="back-to-top" title="Zurück nach oben" href="javascript:;">
+<a id="back-to-top" title="回到顶端" href="javascript:;">
     <i class="fas fa-chevron-up"></i>
 </a>
 <script src="/js/back-to-top.js" defer></script>
@@ -763,7 +736,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="searchbox ins-search">
     <div class="searchbox-container ins-search-container">
         <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Tippen Sie etwas..." />
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
             <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
         </div>
         <div class="searchbox-result-wrapper ins-section-wrapper">
@@ -775,11 +748,11 @@ document.addEventListener('DOMContentLoaded', function () {
     (function (window) {
         var INSIGHT_CONFIG = {
             TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Seiten',
-                CATEGORIES: 'Kategorien',
-                TAGS: 'Tags',
-                UNTITLED: '(Unbenannt)',
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
             },
             CONTENT_URL: '/content.json',
         };
@@ -790,5 +763,5 @@ document.addEventListener('DOMContentLoaded', function () {
 <link rel="stylesheet" href="/css/search.css">
 <link rel="stylesheet" href="/css/insight.css">
     
-<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"right","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
 </html>

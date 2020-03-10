@@ -7,14 +7,14 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>Tag: protobuf - Nickqiao&#39;s blog</title>
+<title>标签: protobuf - Nickqiao&#39;s blog</title>
 
 
     <meta property="og:type" content="website">
 <meta property="og:title" content="Nickqiao&#39;s blog">
 <meta property="og:url" content="http://nickqiaoo.github.io/tags/protobuf/index.html">
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
-<meta property="og:locale" content="zh-Hans">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Nickqiao&#39;s blog">
@@ -113,7 +113,7 @@
                 
                 
                 
-                <a class="navbar-item search" title="Suche" href="javascript:;">
+                <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
                 </a>
                 
@@ -129,7 +129,7 @@
     <div class="card-content">
         <nav class="breadcrumb" aria-label="breadcrumbs">
         <ul>
-            <li><a href="/tags">Tags</a></li>
+            <li><a href="/tags">标签</a></li>
             <li class="is-active"><a href="#" aria-current="page">protobuf</a></li>
         </ul>
         </nav>
@@ -153,7 +153,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    9 minutes lesen (Über 1323 Worte)
+                    9 分钟 读完 (大约 1322 个字)
                 </span>
                 
                 
@@ -167,33 +167,17 @@
         </h1>
         <div class="content">
             <p>实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。</p>
-<p>实现主要参考了muduo的RPC实现，纯异步。</p>
-<h2 id="pb生成代码分析"><a href="#pb生成代码分析" class="headerlink" title="pb生成代码分析"></a>pb生成代码分析</h2><p>在proto文件中定义service</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">service Logic &#123;</span><br><span class="line">    <span class="comment">// Ping Service </span></span><br><span class="line">    <span class="function">rpc <span class="title">Ping</span><span class="params">(PingReq)</span> <span class="title">returns</span><span class="params">(PingReply)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>主要关注生成的pb.h中的这两个类，Logic是server端使用的，Stub是client用的，我们要做的就是实现Logic类中的虚方法和Stub中用到的RpcChannel。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Logic</span> :</span> <span class="keyword">public</span> ::google::protobuf::Service &#123;</span><br><span class="line"> <span class="keyword">protected</span>:</span><br><span class="line">  <span class="comment">// This class should be treated as an abstract interface.</span></span><br><span class="line">  <span class="function"><span class="keyword">inline</span> <span class="title">Logic</span><span class="params">()</span> </span>&#123;&#125;;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">virtual</span> ~Logic();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">typedef</span> Logic_Stub Stub;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">static</span> <span class="keyword">const</span> ::google::protobuf::<span class="function">ServiceDescriptor* <span class="title">descriptor</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Ping</span><span class="params">(::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                       <span class="keyword">const</span> ::logic::PingReq* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::logic::PingReply* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// implements Service ----------------------------------------------</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">ServiceDescriptor* <span class="title">GetDescriptor</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">CallMethod</span><span class="params">(<span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                  <span class="keyword">const</span> ::google::protobuf::Message* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::Message* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">Message&amp; <span class="title">GetRequestPrototype</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method)</span> <span class="keyword">const</span></span>;</span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">Message&amp; <span class="title">GetResponsePrototype</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method)</span> <span class="keyword">const</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Logic);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Logic_Stub</span> :</span> <span class="keyword">public</span> Logic &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  Logic_Stub(::google::protobuf::RpcChannel* channel);</span><br><span class="line">  Logic_Stub(::google::protobuf::RpcChannel* channel,</span><br><span class="line">                   ::google::protobuf::Service::ChannelOwnership ownership);</span><br><span class="line">  ~Logic_Stub();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">inline</span> ::google::protobuf::<span class="function">RpcChannel* <span class="title">channel</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> channel_; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// implements Logic ------------------------------------------</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Ping</span><span class="params">(::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                       <span class="keyword">const</span> ::logic::PingReq* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::logic::PingReply* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  ::google::protobuf::RpcChannel* channel_;</span><br><span class="line">  <span class="keyword">bool</span> owns_channel_;</span><br><span class="line">  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Logic_Stub);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>服务端的使用方法一般为<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LogicServiceImpl logicservice_;</span><br><span class="line">rpcserver.registerService(&amp;logicservice_);</span><br><span class="line">rpcserver.start();</span><br></pre></td></tr></table></figure></p>
-<p>客户端直接<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Logic_Stub stub;</span><br><span class="line">stub.Ping(<span class="literal">NULL</span>, request, response, done);</span><br></pre></td></tr></table></figure></p>
-<p>##RpcChannel实现</p>
-<p>RpcChannel代码中的注释写的很清楚：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Abstract interface for an RPC channel.  An RpcChannel represents a</span></span><br><span class="line"><span class="comment">// communication line to a Service which can be used to call that Service's</span></span><br><span class="line"><span class="comment">// methods.</span></span><br></pre></td></tr></table></figure></p>
-<p>代码注释中看到了protobuf的作者也有Jeff Dean…</p>
-<p>我们继承protobuf的RpcChannel，持有网络库中的Session类，并实现Session中的回调函数，将Session中的onMessage回调设置为RpcChannel的onMessage函数，实现消息的收发，所以首先需要设计一下RPC协议，我设计了一个简单的二进制协议：</p>
-<p><img src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/RpcProtocol.png" alt="rpcprotocol"></p>
-<p>PackageLen表示包体长度，Id标识每条RPC消息，为什么需要Id？因为客户端请求时会设置收到消息后的回调，所以在收到消息时需要根据消息id执行相应的回调，因为客户端和服务端共用RpcChannel类，所以需要标识消息类型，这里简单把Id最高位为设为RPC标志位，0表示request，1表示response。为了唯一标识调用的RPC函数，使用servicename:methodname拼起来作为消息名存在MethodName，最后是数据，放在Data。</p>
-<h2 id="Client接收回复"><a href="#Client接收回复" class="headerlink" title="Client接收回复"></a>Client接收回复</h2><p>我的实现方法是定义了一个RpcCodec作协议编解码，在RpcChanel的onMessage中调用codec的协议解析函数将协议的各个字段解析出来，之后调用onRpcMessage处理一个完整的消息。在onRpcChannel中根据消息是请求还是回复作不同的处理，如果是回复，就根据id调用设置的回调，这里还有一个问题？怎么把data反序列化成回调需要的参数类型呢？<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">OutstandingCall</span></span></span><br><span class="line"><span class="class"> &#123;</span></span><br><span class="line">   ::google::protobuf::Message* response;</span><br><span class="line">   ::google::protobuf::Closure* done;</span><br><span class="line"> &#125;;</span><br></pre></td></tr></table></figure></p>
-<p>其实这里不只保存回调函数，还把请求时的response保存了，所以可以直接反序列化。</p>
-<h2 id="Server端接收请求"><a href="#Server端接收请求" class="headerlink" title="Server端接收请求"></a>Server端接收请求</h2><p>如果是请求，那么我们需要调用相应的serviceimpl的实现，那怎么拿到对应的service呢？如何生成对应方法的参数呢?这就需要服务端维护一个servicename对应的servicemap，就可以根据name查找service，利用protobuf提供的反射功能，有了service和method的name，我们也可以生成对应的参数。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> google::protobuf::ServiceDescriptor* desc = service-&gt;GetDescriptor();</span><br><span class="line"><span class="keyword">const</span> google::protobuf::MethodDescriptor* method = desc-&gt;FindMethodByName(methodname);</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;google::protobuf::Message&gt; request(service-&gt;GetRequestPrototype(method).New());</span><br><span class="line"><span class="keyword">if</span> (request-&gt;ParseFromArray(data, datalen)) &#123;</span><br><span class="line">   google::protobuf::Message* response = service-&gt;GetResponsePrototype(method).New()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>首先根据servicename拿到我们自己保存的对应的service，然后用ServiceDescriptor根据methodname拿到MethodDescriptor，然后就可以生成req和resp消息了，有了MethodDescriptor，service的CallMethod<br>就可以分发到对应的函数了。</p>
-<h2 id="Client发送请求"><a href="#Client发送请求" class="headerlink" title="Client发送请求"></a>Client发送请求</h2><p>最后分析一下客户端发消息的流程，Stub调用的是RpcChannel的CallMethod函数，只要在函数中保存回调，调用codec的send函数按协议组装发送就好了。</p>
-<p>关于回调，protobuf生成的代码中类型是Closure，可以用NewCallback函数创建，但是有一个限制，回调函数的参数最多只能有两个，如果定制只能自己写代码生成或者改NewCallback的实现。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>框架只实现了基本的消息收发，RPC里能做的还有很多，服务发现，熔断，限流，链路追踪。这里只是实现一个demo了解一下RPC原理。</p>
-<p>Client发请求：Stub.Ping()-&gt;RpcChannel.CallMethod()-&gt;RpcCodec.send()</p>
-<p>Client收回复：RpcChannel.onRpcMessage()-&gt;根据servicename找到service，根据methodname生成Descriptor，生成函数参数-&gt;service.CallMethod()-&gt;调用对应RPC函数</p>
-<p>Server收请求：RpcChannel.onRpcMessage()-&gt;根据id调用回调</p>
-
+<p>主要参考了muduo的RPC实现，纯异步。</p>
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2019/11/29/protobuf-rpc/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
@@ -231,7 +215,7 @@
                     
                     
                     <p class="is-size-6 is-block">
-                        Your title
+                        Naive
                     </p>
                     
                     
@@ -247,7 +231,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Posts
+                        文章
                     </p>
                     <a href="/archives">
                         <p class="title has-text-weight-normal">
@@ -259,7 +243,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Kategorien
+                        分类
                     </p>
                     <a href="/categories">
                         <p class="title has-text-weight-normal">
@@ -271,7 +255,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Tags
+                        标签
                     </p>
                     <a href="/tags">
                         <p class="title has-text-weight-normal">
@@ -284,7 +268,7 @@
         
         <div class="level">
             <a class="level-item button is-link is-rounded" href="https://github.com/Nickqiaoo" target="_blank" rel="noopener">
-                Folgen</a>
+                关注我</a>
         </div>
         
         
@@ -295,34 +279,6 @@
                 title="Github" href="https://github.com/Nickqiaoo">
                 
                 <i class="fab fa-github"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Facebook" href="https://facebook.com">
-                
-                <i class="fab fa-facebook"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Twitter" href="https://twitter.com">
-                
-                <i class="fab fa-twitter"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Dribbble" href="https://dribbble.com">
-                
-                <i class="fab fa-dribbble"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="RSS" href="/">
-                
-                <i class="fas fa-rss"></i>
                 
             </a>
             
@@ -341,7 +297,7 @@
     <div class="card-content">
         <div class="menu">
             <h3 class="menu-label">
-                Kategorien
+                分类
             </h3>
             <ul class="menu-list">
             <li>
@@ -386,14 +342,14 @@
     <div class="card-content">
         <div class="menu">
         <h3 class="menu-label">
-            Archive
+            归档
         </h3>
         <ul class="menu-list">
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
                 <span class="level-start">
-                    <span class="level-item">January 2020</span>
+                    <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">1</span>
@@ -404,7 +360,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2019/11/">
                 <span class="level-start">
-                    <span class="level-item">November 2019</span>
+                    <span class="level-item">十一月 2019</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">2</span>
@@ -415,7 +371,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2018/10/">
                 <span class="level-start">
-                    <span class="level-item">October 2018</span>
+                    <span class="level-item">十月 2018</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">4</span>
@@ -431,7 +387,7 @@
             <div class="card widget">
     <div class="card-content">
         <h3 class="menu-label">
-            Tag Cloud
+            标签云
         </h3>
         <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
@@ -453,7 +409,7 @@
     <div class="card-content">
         <div class="menu">
             <h3 class="menu-label">
-                Kategorien
+                分类
             </h3>
             <ul class="menu-list">
             <li>
@@ -498,14 +454,14 @@
     <div class="card-content">
         <div class="menu">
         <h3 class="menu-label">
-            Archive
+            归档
         </h3>
         <ul class="menu-list">
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
                 <span class="level-start">
-                    <span class="level-item">January 2020</span>
+                    <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">1</span>
@@ -516,7 +472,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2019/11/">
                 <span class="level-start">
-                    <span class="level-item">November 2019</span>
+                    <span class="level-item">十一月 2019</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">2</span>
@@ -527,7 +483,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2018/10/">
                 <span class="level-start">
-                    <span class="level-item">October 2018</span>
+                    <span class="level-item">十月 2018</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">4</span>
@@ -543,7 +499,7 @@
         <div class="card widget">
     <div class="card-content">
         <h3 class="menu-label">
-            Tag Cloud
+            标签云
         </h3>
         <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
@@ -607,7 +563,7 @@
 </footer>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
-<script>moment.locale("zh-Hans");</script>
+<script>moment.locale("zh-CN");</script>
 
 
 <script>
@@ -684,7 +640,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<a id="back-to-top" title="Zurück nach oben" href="javascript:;">
+<a id="back-to-top" title="回到顶端" href="javascript:;">
     <i class="fas fa-chevron-up"></i>
 </a>
 <script src="/js/back-to-top.js" defer></script>
@@ -708,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="searchbox ins-search">
     <div class="searchbox-container ins-search-container">
         <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Tippen Sie etwas..." />
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
             <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
         </div>
         <div class="searchbox-result-wrapper ins-section-wrapper">
@@ -720,11 +676,11 @@ document.addEventListener('DOMContentLoaded', function () {
     (function (window) {
         var INSIGHT_CONFIG = {
             TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Seiten',
-                CATEGORIES: 'Kategorien',
-                TAGS: 'Tags',
-                UNTITLED: '(Unbenannt)',
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
             },
             CONTENT_URL: '/content.json',
         };
@@ -735,5 +691,5 @@ document.addEventListener('DOMContentLoaded', function () {
 <link rel="stylesheet" href="/css/search.css">
 <link rel="stylesheet" href="/css/insight.css">
     
-<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"right","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
 </html>

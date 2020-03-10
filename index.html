@@ -14,7 +14,7 @@
 <meta property="og:title" content="Nickqiao&#39;s blog">
 <meta property="og:url" content="http://nickqiaoo.github.io/index.html">
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
-<meta property="og:locale" content="zh-Hans">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Nickqiao&#39;s blog">
@@ -113,7 +113,7 @@
                 
                 
                 
-                <a class="navbar-item search" title="Suche" href="javascript:;">
+                <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
                 </a>
                 
@@ -143,7 +143,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    14 minutes lesen (Über 2026 Worte)
+                    14 分钟 读完 (大约 2027 个字)
                 </span>
                 
                 
@@ -157,29 +157,16 @@
         </h1>
         <div class="content">
             <p>微服务中限流模块是必不可少的，理想的情况是使系统维持在能承受的负载范围内，没有堆积请求，请求处理时间就成了一个很好地判断指标，如果请求处理的时间过长，说明发生了堆积。传统的做法可能是硬性限制qps或队列长度或者根据cpu使用率等指标限制，无法实现自适应限流，根据请求处理时间使用算法限流可以很好地自适应系统的变化。</p>
-<h2 id="限流接口"><a href="#限流接口" class="headerlink" title="限流接口"></a>限流接口</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Limiter limit interface.</span></span><br><span class="line"><span class="keyword">type</span> Limiter <span class="keyword">interface</span> &#123;</span><br><span class="line">	Allow(ctx context.Context) (<span class="function"><span class="keyword">func</span><span class="params">(Op)</span>, <span class="title">error</span>)</span></span><br><span class="line"><span class="function">&#125;</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">// <span class="title">Limiter</span> <span class="title">use</span> <span class="title">tcp</span> <span class="title">vegas</span> + <span class="title">codel</span> <span class="title">for</span> <span class="title">adaptive</span> <span class="title">limit</span>.</span></span><br><span class="line"><span class="function"><span class="title">type</span> <span class="title">Limiter</span> <span class="title">struct</span></span> &#123;</span><br><span class="line">	rate  *vegas.Vegas</span><br><span class="line">	queue *aqm.Queue</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Allow immplemnet rate.Limiter.</span></span><br><span class="line"><span class="comment">// if error is returned,no need to call done()</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *Limiter)</span> <span class="title">Allow</span><span class="params">(ctx context.Context)</span> <span class="params">(<span class="keyword">func</span>(rate.Op)</span>, <span class="title">error</span>)</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> (</span><br><span class="line">		done <span class="function"><span class="keyword">func</span><span class="params">(time.Time, rate.Op)</span></span></span><br><span class="line"><span class="function">		<span class="title">err</span>  <span class="title">error</span></span></span><br><span class="line"><span class="function">		<span class="title">ok</span>   <span class="title">bool</span></span></span><br><span class="line"><span class="function">	)</span></span><br><span class="line"><span class="function">	<span class="title">if</span> <span class="title">done</span>, <span class="title">ok</span> = <span class="title">l</span>.<span class="title">rate</span>.<span class="title">Acquire</span><span class="params">()</span>; !<span class="title">ok</span></span> &#123;</span><br><span class="line">		<span class="comment">// NOTE exceed max inflight, use queue</span></span><br><span class="line">		<span class="keyword">if</span> err = l.queue.Push(ctx); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			done(time.Time&#123;&#125;, rate.Ignore)</span><br><span class="line">			<span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(rate.Op)</span></span> &#123;&#125;, err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	start := time.Now()</span><br><span class="line">	<span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(op rate.Op)</span></span> &#123;</span><br><span class="line">		done(start, op)</span><br><span class="line">		l.queue.Pop()</span><br><span class="line">	&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>接口很简单，就一个Allow函数，它会返回一个done func，需要我们执行完请求后调用。可以看到具体的实现有两个组件，Vegas和aqm队列，首先使用Vegas，不成功放入aqm队列。</p>
-<h2 id="aqm"><a href="#aqm" class="headerlink" title="aqm"></a>aqm</h2><p>主动队列管理（Active Queue Management，AQM），网络包传输的一种拥塞控制机制，使得在路由器缓存被耗尽前有计划的丢掉一部分分组，Codel是一种延时控制算法，通过检测排队延时来判断拥塞情况，可以自适应的调整丢包，这里有一段代码<a href="https://queue.acm.org/appendices/codel.html">实现</a>。</p>
-<p>B站的go版本实现：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Config <span class="keyword">struct</span> &#123;</span><br><span class="line">	Target   <span class="keyword">int64</span> <span class="comment">// target queue delay (default 20 ms). 能容忍的最大排队延时</span></span><br><span class="line">	Internal <span class="keyword">int64</span> <span class="comment">// sliding minimum time window width (default 500 ms)  窗口大小</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> packet <span class="keyword">struct</span> &#123;</span><br><span class="line">	ch <span class="keyword">chan</span> <span class="keyword">bool</span></span><br><span class="line">	ts <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Queue queue is CoDel req buffer queue.</span></span><br><span class="line"><span class="keyword">type</span> Queue <span class="keyword">struct</span> &#123;</span><br><span class="line">	pool    sync.Pool</span><br><span class="line">	packets <span class="keyword">chan</span> packet</span><br><span class="line"></span><br><span class="line">	mux      sync.RWMutex</span><br><span class="line">	conf     *Config</span><br><span class="line">	count    <span class="keyword">int64</span></span><br><span class="line">	dropping <span class="keyword">bool</span>  <span class="comment">// 	Equal to 1 if in drop state</span></span><br><span class="line">	faTime   <span class="keyword">int64</span> <span class="comment">//  丢弃状态触发启动时间</span></span><br><span class="line">	dropNext <span class="keyword">int64</span> <span class="comment">// 下一次开始丢弃的时间</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Push req into CoDel request buffer queue.</span></span><br><span class="line"><span class="comment">// if return error is nil,the caller must call q.Done() after finish request handling</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *Queue)</span> <span class="title">Push</span><span class="params">(ctx context.Context)</span> <span class="params">(err error)</span></span> &#123;</span><br><span class="line">	r := packet&#123;</span><br><span class="line">		ch: q.pool.Get().(<span class="keyword">chan</span> <span class="keyword">bool</span>),</span><br><span class="line">		ts: time.Now().UnixNano() / <span class="keyword">int64</span>(time.Millisecond),</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> q.packets &lt;- r:</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		err = ecode.LimitExceed <span class="comment">//channel满直接丢弃</span></span><br><span class="line">		q.pool.Put(r.ch)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> drop := &lt;-r.ch: <span class="comment">//阻塞等待pop判断是否丢弃</span></span><br><span class="line">			<span class="keyword">if</span> drop &#123;</span><br><span class="line">				err = ecode.LimitExceed</span><br><span class="line">			&#125;</span><br><span class="line">			q.pool.Put(r.ch)</span><br><span class="line">		<span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">			err = ecode.Deadline</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Pop req from CoDel request buffer queue.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *Queue)</span> <span class="title">Pop</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> p := &lt;-q.packets:</span><br><span class="line">			drop := q.judge(p) <span class="comment">//如果判断为丢弃，循环检测</span></span><br><span class="line">			<span class="keyword">select</span> &#123;</span><br><span class="line">			<span class="keyword">case</span> p.ch &lt;- drop:</span><br><span class="line">				<span class="keyword">if</span> !drop &#123;</span><br><span class="line">					<span class="keyword">return</span></span><br><span class="line">				&#125;</span><br><span class="line">			<span class="keyword">default</span>:</span><br><span class="line">				q.pool.Put(p.ch)</span><br><span class="line">			&#125;</span><br><span class="line">		<span class="keyword">default</span>:</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *Queue)</span> <span class="title">controlLaw</span><span class="params">(now <span class="keyword">int64</span>)</span> <span class="title">int64</span></span> &#123;</span><br><span class="line">	q.dropNext = now + <span class="keyword">int64</span>(<span class="keyword">float64</span>(q.conf.Internal)/math.Sqrt(<span class="keyword">float64</span>(q.count))) <span class="comment">//根据当前丢弃周期内的丢包数量计算下一次丢弃的时间，丢弃的数量越多，丢弃间隔越短。</span></span><br><span class="line">	<span class="keyword">return</span> q.dropNext</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// judge decide if the packet should drop or not.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *Queue)</span> <span class="title">judge</span><span class="params">(p packet)</span> <span class="params">(drop <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">	now := time.Now().UnixNano() / <span class="keyword">int64</span>(time.Millisecond)</span><br><span class="line">	sojurn := now - p.ts</span><br><span class="line">	q.mux.Lock()</span><br><span class="line">	<span class="keyword">defer</span> q.mux.Unlock()</span><br><span class="line">	<span class="keyword">if</span> sojurn &lt; q.conf.Target &#123; <span class="comment">//延时小于容忍时间，停止丢弃</span></span><br><span class="line">		q.faTime = <span class="number">0</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> q.faTime == <span class="number">0</span> &#123; <span class="comment">//延时较大后容忍一个窗口期</span></span><br><span class="line">		q.faTime = now + q.conf.Internal</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> now &gt;= q.faTime &#123; <span class="comment">//延时较大维持一个窗口期后开始进行是否进入丢弃状态的判读</span></span><br><span class="line">		drop = <span class="literal">true</span>  <span class="comment">//这里直接将返回值设为true，也就是说容忍一个窗口期后直接开始丢弃，而原始算法实现中丢弃只在状态下发生，如果最近没有发生丢弃应该继续容忍一个一个窗口期再开始丢弃的。</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> q.dropping &#123; <span class="comment">//丢弃状态下延时较小后直接停止</span></span><br><span class="line">		<span class="keyword">if</span> !drop &#123;</span><br><span class="line">			<span class="comment">// sojourn time below target - leave dropping state</span></span><br><span class="line">			q.dropping = <span class="literal">false</span></span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> now &gt; q.dropNext &#123;</span><br><span class="line">			q.count++</span><br><span class="line">			q.dropNext = q.controlLaw(q.dropNext)</span><br><span class="line">			drop = <span class="literal">true</span></span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;   <span class="comment">//延时较大维持一个窗口期后如果距上一次计算出的丢弃时间在一个窗口期内直接进入丢弃状态，如果一个窗口期内没有丢弃则再容忍一个窗口期</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> drop &amp;&amp; (now-q.dropNext &lt; q.conf.Internal || now-q.faTime &gt;= q.conf.Internal) &#123;</span><br><span class="line">		q.dropping = <span class="literal">true</span></span><br><span class="line">		<span class="comment">// If we're in a drop cycle, the drop rate that controlled the queue</span></span><br><span class="line">		<span class="comment">// on the last cycle is a good starting point to control it now.</span></span><br><span class="line">		<span class="keyword">if</span> now-q.dropNext &lt; q.conf.Internal &#123; <span class="comment">//如果距上一次计算出的丢弃时间在一个窗口期内直接沿用之前的控制策略，否则从1开始重新调整</span></span><br><span class="line">			<span class="keyword">if</span> q.count &gt; <span class="number">2</span> &#123;</span><br><span class="line">				q.count = q.count - <span class="number">2</span></span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				q.count = <span class="number">1</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			q.count = <span class="number">1</span></span><br><span class="line">		&#125;</span><br><span class="line">		q.dropNext = q.controlLaw(now)</span><br><span class="line">		drop = <span class="literal">true</span></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>codel算法的大致思想就是根据延时情况判断丢弃策略，在限流中就是请求的处理时间，算法只需要两个参数，一个是容忍的最大时延，一个是窗口期，当超过容忍时延时，进入一个窗口期的容忍阶段，此阶段不开始丢弃，这样容忍了短时间的突发流量，在超过容忍阶段后如果最近发生过丢弃则进入丢弃状态，否则再容忍一个窗口期，在丢弃状态下只要时延小于容忍时延就停止丢弃，丢弃状态下随着丢弃数量的不断增加丢弃间隔会缩短，也就是丢弃的越来越频繁。</p>
-<h2 id="Vegas"><a href="#Vegas" class="headerlink" title="Vegas"></a>Vegas</h2><p>Vegas是TCP中使用的基于时延的拥塞控制算法，通过比较实际吞吐量和期望吞吐量来调节拥塞窗口的大小。</p>
-<ul>
-<li>当前能处理的请求数量通过的最请求limit（拥塞窗口尺寸）</li>
-<li>请求最短处理时间 minRTT</li>
-<li>请求实际处理时间 lastRTT</li>
-<li>期望通过速率 Expect = limit/minRTT</li>
-<li>实际通过速率 Actual = limit/lastRTT</li>
-<li>速率差值 Diff = Expect-Actual</li>
-</ul>
-<p>Diff = queue/minRTT = limit/minRTT - limit/lastRTT = limit(1/minRTT - 1/lastRTT)<br>最后推导出 queueSize = limit * (1 - minRTT/lastRTT) 也就是等待中的请求大小是queueSize，我们根据queueSize的大小来调整limit</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Vegas tcp vegas.</span></span><br><span class="line"><span class="keyword">type</span> Vegas <span class="keyword">struct</span> &#123;</span><br><span class="line">	limit      <span class="keyword">int64</span></span><br><span class="line">	inFlight   <span class="keyword">int64</span> <span class="comment">//处理中的请求数</span></span><br><span class="line">	updateTime <span class="keyword">int64</span></span><br><span class="line">	minRTT     <span class="keyword">int64</span></span><br><span class="line"></span><br><span class="line">	sample atomic.Value</span><br><span class="line">	mu     sync.Mutex</span><br><span class="line">	probes <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//记录一个时间段内的统计信息</span></span><br><span class="line"><span class="keyword">type</span> sample <span class="keyword">struct</span> &#123;</span><br><span class="line">	count       <span class="keyword">int64</span></span><br><span class="line">	maxInFlight <span class="keyword">int64</span></span><br><span class="line">	drop        <span class="keyword">int64</span></span><br><span class="line">	<span class="comment">// nanoseconds</span></span><br><span class="line">	totalRTT <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Acquire No matter success or not,done() must be called at last.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(v *Vegas)</span> <span class="title">Acquire</span><span class="params">()</span> <span class="params">(done <span class="keyword">func</span>(time.Time, rate.Op)</span>, <span class="title">success</span> <span class="title">bool</span>)</span> &#123;</span><br><span class="line">	inFlight := atomic.AddInt64(&amp;v.inFlight, <span class="number">1</span>)</span><br><span class="line">	<span class="keyword">if</span> inFlight &lt;= atomic.LoadInt64(&amp;v.limit) &#123;</span><br><span class="line">		success = <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(start time.Time, op rate.Op)</span></span> &#123; <span class="comment">//请求处理完后调用</span></span><br><span class="line">		atomic.AddInt64(&amp;v.inFlight, <span class="number">-1</span>)</span><br><span class="line">		<span class="keyword">if</span> op == rate.Ignore &#123;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">		end := time.Now().UnixNano()</span><br><span class="line">		rtt := end - start.UnixNano()</span><br><span class="line"></span><br><span class="line">		s := v.sample.Load().(*sample)</span><br><span class="line">		<span class="keyword">if</span> op == rate.Drop &#123;</span><br><span class="line">			s.Add(rtt, inFlight, <span class="literal">true</span>)</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> op == rate.Success &#123;</span><br><span class="line">			s.Add(rtt, inFlight, <span class="literal">false</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> end &gt; atomic.LoadInt64(&amp;v.updateTime) &amp;&amp; s.Count() &gt;= <span class="number">16</span> &#123;</span><br><span class="line">			v.mu.Lock()</span><br><span class="line">			<span class="keyword">defer</span> v.mu.Unlock()</span><br><span class="line">			<span class="keyword">if</span> v.sample.Load().(*sample) != s &#123; <span class="comment">//其它协程已经重置sample，进入下一个窗口期，直接返回</span></span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			v.sample.Store(&amp;sample&#123;&#125;) <span class="comment">//重置sample</span></span><br><span class="line"></span><br><span class="line">			lastRTT := s.RTT() <span class="comment">//统计窗口期的平均处理时间</span></span><br><span class="line">			<span class="keyword">if</span> lastRTT &lt;= <span class="number">0</span> &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			updateTime := end + lastRTT*<span class="number">5</span> <span class="comment">//设置当前窗口期大小</span></span><br><span class="line">			<span class="keyword">if</span> lastRTT*<span class="number">5</span> &lt; _minWindowTime &#123;</span><br><span class="line">				updateTime = end + _minWindowTime</span><br><span class="line">			&#125; <span class="keyword">else</span> <span class="keyword">if</span> lastRTT*<span class="number">5</span> &gt; _maxWindowTime &#123;</span><br><span class="line">				updateTime = end + _maxWindowTime</span><br><span class="line">			&#125;</span><br><span class="line">			atomic.StoreInt64(&amp;v.updateTime, updateTime)</span><br><span class="line">			limit := atomic.LoadInt64(&amp;v.limit)</span><br><span class="line">			queue := <span class="keyword">float64</span>(limit) * (<span class="number">1</span> - <span class="keyword">float64</span>(v.minRTT)/<span class="keyword">float64</span>(lastRTT)) <span class="comment">//估算等待中的请求数量</span></span><br><span class="line">			v.probes-- <span class="comment">//每隔一段时间探测minRTT，如果窗口期的流量与限制差距较大则说明minRTT不准确，更新为lastRTT</span></span><br><span class="line">			<span class="keyword">if</span> v.probes &lt;= <span class="number">0</span> &#123;</span><br><span class="line">				maxFlight := s.MaxInFlight()</span><br><span class="line">				<span class="keyword">if</span> maxFlight*<span class="number">2</span> &lt; v.limit || maxFlight &lt;= _minLimit &#123;</span><br><span class="line">					v.probes = <span class="number">3</span>*limit + rand.Int63n(<span class="number">3</span>*limit)</span><br><span class="line">					v.minRTT = lastRTT</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> v.minRTT == <span class="number">0</span> || lastRTT &lt; v.minRTT &#123;</span><br><span class="line">				v.minRTT = lastRTT</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">var</span> newLimit <span class="keyword">float64</span></span><br><span class="line">			threshold := math.Sqrt(<span class="keyword">float64</span>(limit)) / <span class="number">2</span></span><br><span class="line">			<span class="keyword">if</span> s.Drop() &#123;</span><br><span class="line">				newLimit = <span class="keyword">float64</span>(limit) - threshold</span><br><span class="line">			&#125; <span class="keyword">else</span> <span class="keyword">if</span> s.MaxInFlight()*<span class="number">2</span> &lt; v.limit &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> queue &lt; threshold &#123; <span class="comment">//扩缩策略</span></span><br><span class="line">					newLimit = <span class="keyword">float64</span>(limit) + <span class="number">6</span>*threshold</span><br><span class="line">				&#125; <span class="keyword">else</span> <span class="keyword">if</span> queue &lt; <span class="number">2</span>*threshold &#123;</span><br><span class="line">					newLimit = <span class="keyword">float64</span>(limit) + <span class="number">3</span>*threshold</span><br><span class="line">				&#125; <span class="keyword">else</span> <span class="keyword">if</span> queue &lt; <span class="number">3</span>*threshold &#123;</span><br><span class="line">					newLimit = <span class="keyword">float64</span>(limit) + threshold</span><br><span class="line">				&#125; <span class="keyword">else</span> <span class="keyword">if</span> queue &gt; <span class="number">6</span>*threshold &#123;</span><br><span class="line">					newLimit = <span class="keyword">float64</span>(limit) - threshold</span><br><span class="line">				&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">					<span class="keyword">return</span></span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			newLimit = math.Max(_minLimit, math.Min(_maxLimit, newLimit))</span><br><span class="line">			atomic.StoreInt64(&amp;v.limit, <span class="keyword">int64</span>(newLimit))</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;, success</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>总结一下，vegas算法根据统计出的最小时延和窗口期的平均时延作比较估算出等待中的请求数量，调整限制大小</p>
-<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><blockquote>
-<p><a href="https://queue.acm.org/appendices/codel.html">https://queue.acm.org/appendices/codel.html</a> \<br><a href="http://blog.zxh.site/2019/07/01/tcp-vegas/">http://blog.zxh.site/2019/07/01/tcp-vegas/</a> </p>
-</blockquote>
-
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2020/01/29/bilibili-limit/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
@@ -209,7 +196,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    9 minutes lesen (Über 1323 Worte)
+                    9 分钟 读完 (大约 1322 个字)
                 </span>
                 
                 
@@ -223,33 +210,17 @@
         </h1>
         <div class="content">
             <p>实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。</p>
-<p>实现主要参考了muduo的RPC实现，纯异步。</p>
-<h2 id="pb生成代码分析"><a href="#pb生成代码分析" class="headerlink" title="pb生成代码分析"></a>pb生成代码分析</h2><p>在proto文件中定义service</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">service Logic &#123;</span><br><span class="line">    <span class="comment">// Ping Service </span></span><br><span class="line">    <span class="function">rpc <span class="title">Ping</span><span class="params">(PingReq)</span> <span class="title">returns</span><span class="params">(PingReply)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>主要关注生成的pb.h中的这两个类，Logic是server端使用的，Stub是client用的，我们要做的就是实现Logic类中的虚方法和Stub中用到的RpcChannel。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Logic</span> :</span> <span class="keyword">public</span> ::google::protobuf::Service &#123;</span><br><span class="line"> <span class="keyword">protected</span>:</span><br><span class="line">  <span class="comment">// This class should be treated as an abstract interface.</span></span><br><span class="line">  <span class="function"><span class="keyword">inline</span> <span class="title">Logic</span><span class="params">()</span> </span>&#123;&#125;;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">virtual</span> ~Logic();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">typedef</span> Logic_Stub Stub;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">static</span> <span class="keyword">const</span> ::google::protobuf::<span class="function">ServiceDescriptor* <span class="title">descriptor</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Ping</span><span class="params">(::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                       <span class="keyword">const</span> ::logic::PingReq* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::logic::PingReply* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// implements Service ----------------------------------------------</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">ServiceDescriptor* <span class="title">GetDescriptor</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">CallMethod</span><span class="params">(<span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                  <span class="keyword">const</span> ::google::protobuf::Message* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::Message* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">Message&amp; <span class="title">GetRequestPrototype</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method)</span> <span class="keyword">const</span></span>;</span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">Message&amp; <span class="title">GetResponsePrototype</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method)</span> <span class="keyword">const</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Logic);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Logic_Stub</span> :</span> <span class="keyword">public</span> Logic &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  Logic_Stub(::google::protobuf::RpcChannel* channel);</span><br><span class="line">  Logic_Stub(::google::protobuf::RpcChannel* channel,</span><br><span class="line">                   ::google::protobuf::Service::ChannelOwnership ownership);</span><br><span class="line">  ~Logic_Stub();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">inline</span> ::google::protobuf::<span class="function">RpcChannel* <span class="title">channel</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> channel_; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// implements Logic ------------------------------------------</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Ping</span><span class="params">(::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                       <span class="keyword">const</span> ::logic::PingReq* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::logic::PingReply* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  ::google::protobuf::RpcChannel* channel_;</span><br><span class="line">  <span class="keyword">bool</span> owns_channel_;</span><br><span class="line">  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Logic_Stub);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>服务端的使用方法一般为<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LogicServiceImpl logicservice_;</span><br><span class="line">rpcserver.registerService(&amp;logicservice_);</span><br><span class="line">rpcserver.start();</span><br></pre></td></tr></table></figure></p>
-<p>客户端直接<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Logic_Stub stub;</span><br><span class="line">stub.Ping(<span class="literal">NULL</span>, request, response, done);</span><br></pre></td></tr></table></figure></p>
-<p>##RpcChannel实现</p>
-<p>RpcChannel代码中的注释写的很清楚：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Abstract interface for an RPC channel.  An RpcChannel represents a</span></span><br><span class="line"><span class="comment">// communication line to a Service which can be used to call that Service's</span></span><br><span class="line"><span class="comment">// methods.</span></span><br></pre></td></tr></table></figure></p>
-<p>代码注释中看到了protobuf的作者也有Jeff Dean…</p>
-<p>我们继承protobuf的RpcChannel，持有网络库中的Session类，并实现Session中的回调函数，将Session中的onMessage回调设置为RpcChannel的onMessage函数，实现消息的收发，所以首先需要设计一下RPC协议，我设计了一个简单的二进制协议：</p>
-<p><img src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/RpcProtocol.png" alt="rpcprotocol"></p>
-<p>PackageLen表示包体长度，Id标识每条RPC消息，为什么需要Id？因为客户端请求时会设置收到消息后的回调，所以在收到消息时需要根据消息id执行相应的回调，因为客户端和服务端共用RpcChannel类，所以需要标识消息类型，这里简单把Id最高位为设为RPC标志位，0表示request，1表示response。为了唯一标识调用的RPC函数，使用servicename:methodname拼起来作为消息名存在MethodName，最后是数据，放在Data。</p>
-<h2 id="Client接收回复"><a href="#Client接收回复" class="headerlink" title="Client接收回复"></a>Client接收回复</h2><p>我的实现方法是定义了一个RpcCodec作协议编解码，在RpcChanel的onMessage中调用codec的协议解析函数将协议的各个字段解析出来，之后调用onRpcMessage处理一个完整的消息。在onRpcChannel中根据消息是请求还是回复作不同的处理，如果是回复，就根据id调用设置的回调，这里还有一个问题？怎么把data反序列化成回调需要的参数类型呢？<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">OutstandingCall</span></span></span><br><span class="line"><span class="class"> &#123;</span></span><br><span class="line">   ::google::protobuf::Message* response;</span><br><span class="line">   ::google::protobuf::Closure* done;</span><br><span class="line"> &#125;;</span><br></pre></td></tr></table></figure></p>
-<p>其实这里不只保存回调函数，还把请求时的response保存了，所以可以直接反序列化。</p>
-<h2 id="Server端接收请求"><a href="#Server端接收请求" class="headerlink" title="Server端接收请求"></a>Server端接收请求</h2><p>如果是请求，那么我们需要调用相应的serviceimpl的实现，那怎么拿到对应的service呢？如何生成对应方法的参数呢?这就需要服务端维护一个servicename对应的servicemap，就可以根据name查找service，利用protobuf提供的反射功能，有了service和method的name，我们也可以生成对应的参数。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> google::protobuf::ServiceDescriptor* desc = service-&gt;GetDescriptor();</span><br><span class="line"><span class="keyword">const</span> google::protobuf::MethodDescriptor* method = desc-&gt;FindMethodByName(methodname);</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;google::protobuf::Message&gt; request(service-&gt;GetRequestPrototype(method).New());</span><br><span class="line"><span class="keyword">if</span> (request-&gt;ParseFromArray(data, datalen)) &#123;</span><br><span class="line">   google::protobuf::Message* response = service-&gt;GetResponsePrototype(method).New()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>首先根据servicename拿到我们自己保存的对应的service，然后用ServiceDescriptor根据methodname拿到MethodDescriptor，然后就可以生成req和resp消息了，有了MethodDescriptor，service的CallMethod<br>就可以分发到对应的函数了。</p>
-<h2 id="Client发送请求"><a href="#Client发送请求" class="headerlink" title="Client发送请求"></a>Client发送请求</h2><p>最后分析一下客户端发消息的流程，Stub调用的是RpcChannel的CallMethod函数，只要在函数中保存回调，调用codec的send函数按协议组装发送就好了。</p>
-<p>关于回调，protobuf生成的代码中类型是Closure，可以用NewCallback函数创建，但是有一个限制，回调函数的参数最多只能有两个，如果定制只能自己写代码生成或者改NewCallback的实现。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>框架只实现了基本的消息收发，RPC里能做的还有很多，服务发现，熔断，限流，链路追踪。这里只是实现一个demo了解一下RPC原理。</p>
-<p>Client发请求：Stub.Ping()-&gt;RpcChannel.CallMethod()-&gt;RpcCodec.send()</p>
-<p>Client收回复：RpcChannel.onRpcMessage()-&gt;根据servicename找到service，根据methodname生成Descriptor，生成函数参数-&gt;service.CallMethod()-&gt;调用对应RPC函数</p>
-<p>Server收请求：RpcChannel.onRpcMessage()-&gt;根据id调用回调</p>
-
+<p>主要参考了muduo的RPC实现，纯异步。</p>
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2019/11/29/protobuf-rpc/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
@@ -279,7 +250,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    7 minutes lesen (Über 1019 Worte)
+                    7 分钟 读完 (大约 1020 个字)
                 </span>
                 
                 
@@ -293,19 +264,16 @@
         </h1>
         <div class="content">
             <p>项目里的网络库用了asio，看了asio的文档后感觉用asio挺好用的，很容易实现一个网络库，而且有单独的版本可以不依赖boost，我们的目标是实现一个多线程，每个线程都有一个事件循环的异步网络库。</p>
-<h2 id="功能划分"><a href="#功能划分" class="headerlink" title="功能划分"></a>功能划分</h2><p>整个网络库划分为Acceptor，Loop，LoopMgr，Session，TcpServer这几个类。<br>Loop使用io_context来作为eventloop使用，post函数用来向loop中投递任务，可以看做一个任务队列，线程安全，调用run函数后可以处理各种异步事件和任务。把一些跨线程的操作投递到一个loop中执行就避免了加锁。<br>LoopMgr相当于一个Loop线程池。<br>Acceptor持有asio的acceptor用来接收新连接，<br>Session持有socket，使用async系列函数进行异步读写操作。<br>TcpServer管理连接。使用的时候通过注册TcpServer的onconnect，onmessage，ondisconnect回调函数完成对应事件的逻辑处理。<br>基本使用方法：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">TcpServer server;</span><br><span class="line">server.setNewSessionCallback&lt;UserSession&gt;();</span><br><span class="line">server.setConnectionCallback();</span><br><span class="line">server.setMessageCallback();</span><br><span class="line">server.setServerDisconnectCallback();</span><br><span class="line">server.run();</span><br></pre></td></tr></table></figure></p>
-<h3 id="Acceptor"><a href="#Acceptor" class="headerlink" title="Acceptor"></a>Acceptor</h3><p>Acceptor类直接封装asio的acceptor<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Acceptor::accept() &#123;</span><br><span class="line">    <span class="keyword">auto</span> session = newSessionCallback_();</span><br><span class="line">    acceptor_.async_accept(session-&gt;Socket(), [session, <span class="keyword">this</span>](<span class="keyword">const</span> asio::error_code &amp;err) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!err) &#123;</span><br><span class="line">            session-&gt;start();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            session-&gt;close();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(!acceptor_.is_open())&#123;        </span><br><span class="line">            <span class="keyword">return</span> ;</span><br><span class="line">        &#125;</span><br><span class="line">        accept();</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>asio的异步函数都是这种用法，需要在回调函数中重新调用。Accepter需要设置好newSessionCallback回调用来创建新的session </p>
-<h3 id="Session"><a href="#Session" class="headerlink" title="Session"></a>Session</h3><p>Session封装了socket的读写操作，在start函数中调用设置的connectioncallback之后开始read操作<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Session::read() &#123;</span><br><span class="line">    <span class="function"><span class="keyword">auto</span> <span class="title">self</span><span class="params">(shared_from_this())</span></span>;</span><br><span class="line">    socket_.async_read_some(asio::buffer(read_buf_.beginWrite(), read_buf_.writableBytes()), [self, <span class="keyword">this</span>](<span class="keyword">const</span> asio::error_code &amp;err, <span class="keyword">size_t</span> size) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!err) &#123;</span><br><span class="line">            <span class="comment">//LOG_INFO("receive data,size:&#123;&#125;",size);</span></span><br><span class="line">            read_buf_.hasWritten(size);</span><br><span class="line">            messagecallback_(self, &amp;read_buf_);</span><br><span class="line">            read_buf_.ensureWritableBytes(size);</span><br><span class="line">            read();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            LOG_ERROR(<span class="string">"read error: &#123;&#125;"</span>, err.message());</span><br><span class="line">            <span class="keyword">if</span>(reconnect_)&#123;</span><br><span class="line">                reconnect();</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                disconnectcallback_(id_);</span><br><span class="line">                close();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>在回调中调用负责解包的messagecallback，这里把解包操作完全交个用户设置的回调，用户需要在回调中操作buffer，读出数据后调用retrive移动读指针，一般写法是再加一层codec负责解包后再处理消息。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Session::send(BufferPtr buffer) &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(mutex_);</span><br><span class="line">        unsend_queue_.push_back(buffer);</span><br><span class="line">        <span class="comment">// TODO(shenyu): race condition?</span></span><br><span class="line">        <span class="keyword">if</span> (write_buf_.readableBytes() != <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">auto</span> <span class="title">self</span><span class="params">(shared_from_this())</span></span>;</span><br><span class="line">    loop_-&gt;runInLoop([<span class="keyword">this</span>, self]() &#123;</span><br><span class="line">        <span class="keyword">bool</span> write_in_progress = (write_buf_.readableBytes() != <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (!write_in_progress) &#123;</span><br><span class="line">            write();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> Session::write() &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(mutex_);</span><br><span class="line">        tmp_queue_.swap(unsend_queue_);</span><br><span class="line">        unsend_queue_.clear();</span><br><span class="line">        <span class="keyword">if</span> (tmp_queue_.empty()) <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;buf : tmp_queue_) &#123;</span><br><span class="line">        write_buf_.append(buf-&gt;peek(), buf-&gt;readableBytes());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">auto</span> <span class="title">self</span><span class="params">(shared_from_this())</span></span>;</span><br><span class="line">    socket_.async_write_some(asio::buffer(write_buf_.peek(), write_buf_.readableBytes()), [self, <span class="keyword">this</span>](<span class="keyword">const</span> asio::error_code &amp;err, <span class="keyword">size_t</span> size) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!err) &#123;</span><br><span class="line">            write_buf_.retrieve(write_buf_.readableBytes());</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(<span class="keyword">this</span>-&gt;mutex_);</span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;unsend_queue_.empty()) <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            write();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            disconnectcallback_(id_);</span><br><span class="line">            LOG_ERROR(<span class="string">"write error: &#123;&#125;"</span>, err.message());</span><br><span class="line">            close();</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>写操作稍微复杂一些，不能直接调用异步写操作，如果连续两次调用write函数，而第一个发的包比较大，第二次的包比较小，可能第一个包没有发完第二个就发出去了，保证不了顺序。正确的做法是增加一个待发送队列，send时统一push到未发送队列，并判断发送buf是否为空，空说明当前没有在发消息，调用write，write时将未发送队列的内容拷贝到发送buf中一起发送。</p>
-<h3 id="TcpServer"><a href="#TcpServer" class="headerlink" title="TcpServer"></a>TcpServer</h3><p>用户直接使用TcpServer类，只需实现事件的回调函数即可。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">SessionPtr TcpServer::newSession() &#123;</span><br><span class="line">    <span class="keyword">auto</span> loop = loopmgr_.findNextLoop();</span><br><span class="line">    <span class="keyword">auto</span> session = <span class="built_in">std</span>::make_shared&lt;T&gt;(loop, sessionid_++);</span><br><span class="line">    session-&gt;setMessageCallback(messagecallback_);</span><br><span class="line">    session-&gt;setConnectionCallback(connectioncallback_);</span><br><span class="line">    session-&gt;setDisconnectCallback(<span class="built_in">std</span>::bind(&amp;TcpServer::DefaultDisconnectCallback, <span class="keyword">this</span>, _1));</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(mutex_);</span><br><span class="line">        connections_.insert(&#123;sessionid_, session&#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> session;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里的newSession使用模板函数用来创建Session不同的子类，直接使用轮询将session派发到不同的eventloop中。</p>
-<p>直接使用asio比用epoll还是方便不少的，而且跨平台，但是asio的代码可读性太差，不知道会不会有什么坑，性能比封装epoll肯定也要差些。</p>
-
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2019/11/20/asio-netlib/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
@@ -335,7 +303,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    7 minutes lesen (Über 1032 Worte)
+                    7 分钟 读完 (大约 1032 个字)
                 </span>
                 
                 
@@ -413,7 +381,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    8 minutes lesen (Über 1154 Worte)
+                    8 分钟 读完 (大约 1155 个字)
                 </span>
                 
                 
@@ -427,18 +395,16 @@
         </h1>
         <div class="content">
             <h2 id="uthread"><a href="#uthread" class="headerlink" title="uthread"></a>uthread</h2><p>协程的概念在<a href="http://blog.csdn.net/LMFQYJ/article/details/79211084">coroutine源码分析</a>中有介绍。phxrpc默认使用ucontext作实现，同时还有boost优化版本。</p>
-<h2 id="UThreadContext"><a href="#UThreadContext" class="headerlink" title="UThreadContext"></a>UThreadContext</h2><p><code>UThreadContext</code>是定义了协程接口的基类，并且有一个静态函数对象，用来创建协程上下文，其应该是子类的<code>DoCreate</code>函数，</p>
-<h2 id="UThreaStackMemory"><a href="#UThreaStackMemory" class="headerlink" title="UThreaStackMemory"></a>UThreaStackMemory</h2><p><code>UThreaStackMemory</code>是每个协程的私有栈，这里并没有实现共享栈模式，节省了拷贝，而且内存分配也没有使用<code>malloc</code>，而是使用的<code>mmap</code>，这里设置了一个标志变量<code>need_protect_</code>来选择是否开启保护模式，开启保护模式会在栈两端各多分配一页，并将这两页设置<code>PROT_NONE</code>属性禁止访问。调用<code>mmap</code>时同时设置了<code>MAP_ANONYMOUS | MAP_PRIVATE</code>,<code>MAP_ANONYMOUS</code>表示这段内存是匿名的，不需要读写fd。<code>MAP_PRIVATE</code>建立一个私有映射，不与其他进程共享。</p>
-<h2 id="UThreadContextSystem"><a href="#UThreadContextSystem" class="headerlink" title="UThreadContextSystem"></a>UThreadContextSystem</h2><p><code>UThreadContextSystem</code>是默认的使用ucontext作实现的协程上下文。每个上下文维护一个<code>context_</code>表示协程的上下文，同时还有一个<code>static __thread</code>修饰的<code>main_context_</code>,表示每个线程只有一个，协程<code>yield</code>的时候会切换到这个上下文。<br><code>Resume</code>函数切换到一个协程，<code>Yield</code>函数切出当前协程。<br><code>UThreadFuncWrapper</code>包装了协程的执行函数，协程运行时会切换到这个函数，函数的参数就是this指针，之后调用绑定的执行函数<code>UThreadFunc_t</code>和回调函数<code>UThreadDoneCallback_t</code>。<br>这里之所以将指针拆成两个32位是因为<code>setcontext</code>接受的是<code>int</code>类型的参数。</p>
-<h2 id="UThreadRuntime"><a href="#UThreadRuntime" class="headerlink" title="UThreadRuntime"></a>UThreadRuntime</h2><p><code>UThreadRuntime</code>封装了协程的调度，<code>context_list_</code>保存所有协程上下文，这里把每个上下文封装成一个<code>ContextSlot</code>，其中的<code>next_done_item</code>保存下一个可用的slot下标。<br><code>first_done_item_</code>可以看做始终保存一个已经完成的上下文的下标。<code>Create</code>函数创建一个上下文，首先检查<code>first_done_item_</code>是否大于0 ，如果是说明此时有执行完的协程，更新<code>first_done_item_</code>的值然后直接更换此协程的上下文。<code>UThreadDoneCallback</code>回调将当前<code>first_done_item_</code>保存到<code>next_done_item</code>，然后将其更新为自身。这样实现了上下文的复用。<br><code>Yield</code>和<code>Resume</code>封装了<code>UThreadContext</code>对应的操作。</p>
-<h2 id="UThreadEpollScheduler"><a href="#UThreadEpollScheduler" class="headerlink" title="UThreadEpollScheduler"></a>UThreadEpollScheduler</h2><p><code>UThreadEpollScheduler</code>封装了epoll驱动的协程调度，<code>UThreadSocket_t</code>封装了socket及其他相关资源。<br>我们主要分析一下<code>RunForever</code>函数的执行过程。<br><code>RunForever</code>首先会调用<code>EpollNotifier</code>的<code>Run</code>函数，<code>Run</code>函数会将其<code>Func</code>函数加入调度器的任务队列，<code>Func</code>函数会去读管道，这样做是为了唤醒epoll。<br>接下来调用<code>ConsumeTodoList</code>函数，会将任务队列中的函数创建为协程，并<code>Resume</code>切换到协程，协程中会将fd相应的操作在epoll中注册然后<code>Yield</code>回到<code>Run</code>。之后<code>Run</code>函数调用<code>epoll_wait</code>检查活动的fd，并<code>Resume</code>到活动fd的协程进行IO操作。这样实现了异步操作。<br>处理完活动的事件后，还会不断调用<code>active_socket_func_()</code>继续<code>Resume</code>。<br>最后执行新建连接的回调并处理超时事件。<br>主要的执行流程如下：<br><img src="http://blog-1252613135.cosbj.myqcloud.com/UThreadEpollScheduler.png" alt="这里写图片描述"></p>
-<h2 id="UTreadPoll"><a href="#UTreadPoll" class="headerlink" title="UTreadPoll"></a>UTreadPoll</h2><p><code>UTreadPoll</code>有两个版本，分别poll一个和一组socket，主要功能就是epoll_ctl注册对应事件后<code>Yield</code>，<code>Resume</code>回来后删除注册。</p>
-<p>当poll一组socket时的实现比较特殊，首先<code>epoll_create</code>一个新的<code>epollfd</code>，将所有的socket注册到新的<code>epollfd</code>中，然后新建一个<code>UThreadSocket_t</code>将其中的<code>socketfd</code>设为刚才新建的<code>epollfd</code>，并注册到调度器的<code>epoll</code>中，这样新建的<code>epoll</code>有活动事件时会触发调度器的<code>epoll</code> <code>Resume</code>回来，注意此时对新建的<code>epollfd</code>执行<code>epoll_wait</code>的超时参数设为0，因为一定有活动的事件。<br><code>UThreadAccept</code>，<code>UThreadRead</code>等函数都是利用UThreadPoll改造的IO函数，比较简单。</p>
-<h2 id="uthread-1"><a href="#uthread-1" class="headerlink" title="__uthread"></a>__uthread</h2><p><code>__uthread</code>重载了<code>-</code>操作符，来实现使用<code>uthread_t</code>将协程加入调度器任务队列。</p>
-<p><code>uthread_begin</code>, <code>uthread_end</code>, <code>uthread_s</code>, <code>uthread_t</code>这几个自定义的宏，分别表示协程的准备，结束，协程调度器以及协程的创建。</p>
-
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2018/10/29/uthread-context/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
@@ -468,7 +434,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    5 minutes lesen (Über 676 Worte)
+                    5 分钟 读完 (大约 676 个字)
                 </span>
                 
                 
@@ -521,7 +487,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    10 minutes lesen (Über 1510 Worte)
+                    10 分钟 读完 (大约 1511 个字)
                 </span>
                 
                 
@@ -535,22 +501,16 @@
         </h1>
         <div class="content">
             <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>现在C++的开发开始流行使用coroutine，也就是协程。我看腾讯的几个开源项目里面都有协程的实现。使用协程可以用同步的写法，达到异步的性能。它的基本原理其实就是在IO等待的时候切换出去，在适当的时刻再切换回来。<a href="https://blog.codingnow.com/2012/07/c_coroutine.html">云风</a>用200行代码实现了一个最简单的协程，我们先看这个代码了解一下协程的原理，然后再看微信的<a href="https://github.com/Tencent/libco">libco</a>实现。</p>
-<p>##协程简单介绍</p>
-<p>协程可以理解为一个用户级的线程，一个线程里跑多个协程。协程分为<strong>对称协程</strong>和<strong>非对称协程</strong>，对称协程就是当协程切换的时候他可以切换到任意其他的协程，比如goroutine，而非对称协程只能切换到调用他的调度器。这里实现的是一个非对称协程。</p>
-<h2 id="coroutine源码分析"><a href="#coroutine源码分析" class="headerlink" title="coroutine源码分析"></a>coroutine源码分析</h2><p>详细的注释代码在<a href="https://github.com/Nickqiaoo/coroutine">coroutine源码注释</a><br>我们先来看一下头文件<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> COROUTINE_DEAD 0  <span class="comment">//协程状态</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> COROUTINE_READY 1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> COROUTINE_RUNNING 2</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> COROUTINE_SUSPEND 3</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">schedule</span>;</span> <span class="comment">//协程调度器</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">void</span> <span class="params">(*coroutine_func)</span><span class="params">(struct schedule *, <span class="keyword">void</span> *ud)</span></span>; <span class="comment">//协程执行函数</span></span><br><span class="line"></span><br><span class="line"><span class="function">struct schedule * <span class="title">coroutine_open</span><span class="params">(<span class="keyword">void</span>)</span></span>; <span class="comment">//创建协程调度器</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">coroutine_close</span><span class="params">(struct schedule *)</span></span>; <span class="comment">//关闭协程调度器</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">coroutine_new</span><span class="params">(struct schedule *, coroutine_func, <span class="keyword">void</span> *ud)</span></span>; <span class="comment">//用协程调度器创建一个协程</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">coroutine_resume</span><span class="params">(struct schedule *, <span class="keyword">int</span> id)</span></span>; <span class="comment">//恢复id号协程</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">coroutine_status</span><span class="params">(struct schedule *, <span class="keyword">int</span> id)</span></span>; <span class="comment">//返回id号协程的状态</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">coroutine_running</span><span class="params">(struct schedule *)</span></span>; <span class="comment">//返回正在执行的协程id</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">coroutine_yield</span><span class="params">(struct schedule *)</span></span>; <span class="comment">//保存上下文后中断当前协程执行</span></span><br></pre></td></tr></table></figure></p>
-<p>整个实现就这么几个函数。用法就是先使用coroutine_open创建协程调度器，然后coroutine_new协程，在协程中使用coroutine_yield中断执行，同一个线程中使用coroutine_resume恢复协程执行。</p>
-<p>接下来我们看具体的实现。</p>
-<p>由于协程切换时需要保存当前上下文环境，这里用到了<strong>ucontext</strong>这个库，它有四个函数。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ucontext</span> &#123;</span>   <span class="comment">//上下文结构体</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ucontext</span> *<span class="title">uc_link</span>;</span>  <span class="comment">// 该上下文执行完时要恢复的上下文</span></span><br><span class="line">    <span class="keyword">sigset_t</span>         uc_sigmask;  </span><br><span class="line">    <span class="keyword">stack_t</span>          uc_stack;  <span class="comment">//使用的栈</span></span><br><span class="line">    <span class="keyword">mcontext_t</span>       uc_mcontext;  </span><br><span class="line">    ...  </span><br><span class="line">&#125; <span class="keyword">ucontext_t</span>;  </span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">getcontext</span><span class="params">(<span class="keyword">ucontext_t</span> *ucp)</span></span>; <span class="comment">//将当前上下文保存到ucp</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">setcontext</span><span class="params">(<span class="keyword">const</span> <span class="keyword">ucontext_t</span> *ucp)</span></span>; <span class="comment">//切换到上下文ucp</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">makecontext</span><span class="params">(<span class="keyword">ucontext_t</span> *ucp, <span class="keyword">void</span> (*func)(), <span class="keyword">int</span> argc, ...)</span></span>; <span class="comment">//修改上下文入口函数</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">swapcontext</span><span class="params">(<span class="keyword">ucontext_t</span> *oucp, <span class="keyword">ucontext_t</span> *ucp)</span></span>; <span class="comment">//保存当前上下文到oucp，切换到上下文ucp</span></span><br></pre></td></tr></table></figure></p>
-<p>源码中比较简单的函数就不说了，重点说几个难理解的地方。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> </span><br><span class="line">coroutine_resume(struct schedule * S, <span class="keyword">int</span> id) &#123;</span><br><span class="line">	assert(S-&gt;running == <span class="number">-1</span>);</span><br><span class="line">	assert(id &gt;=<span class="number">0</span> &amp;&amp; id &lt; S-&gt;cap);</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">coroutine</span> *<span class="title">C</span> = <span class="title">S</span>-&gt;<span class="title">co</span>[<span class="title">id</span>];</span></span><br><span class="line">	<span class="keyword">if</span> (C == <span class="literal">NULL</span>)</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line">	<span class="keyword">int</span> status = C-&gt;status;</span><br><span class="line">	<span class="keyword">switch</span>(status) &#123;</span><br><span class="line">	<span class="keyword">case</span> COROUTINE_READY: <span class="comment">//如果状态是ready也就是第一次创建</span></span><br><span class="line">		getcontext(&amp;C-&gt;ctx); <span class="comment">//获取当前上下文</span></span><br><span class="line">		C-&gt;ctx.uc_stack.ss_sp = S-&gt;<span class="built_in">stack</span>; <span class="comment">//将协程栈设置为调度器的共享栈</span></span><br><span class="line">		C-&gt;ctx.uc_stack.ss_size = STACK_SIZE; <span class="comment">//设置栈容量  使用时栈顶栈底同时指向S-&gt;stack+STACK_SIZE，栈顶向下扩张</span></span><br><span class="line">		C-&gt;ctx.uc_link = &amp;S-&gt;main; <span class="comment">//将返回上下文设置为调度器的上下文，协程执行完后会返回到main上下文</span></span><br><span class="line">		S-&gt;running = id; <span class="comment">//设置调度器当前运行的协程id</span></span><br><span class="line">		C-&gt;status = COROUTINE_RUNNING; <span class="comment">//设置协程状态</span></span><br><span class="line">		<span class="keyword">uintptr_t</span> ptr = (<span class="keyword">uintptr_t</span>)S;</span><br><span class="line">		makecontext(&amp;C-&gt;ctx, (<span class="keyword">void</span> (*)(<span class="keyword">void</span>)) mainfunc, <span class="number">2</span>, (<span class="keyword">uint32_t</span>)ptr, (<span class="keyword">uint32_t</span>)(ptr&gt;&gt;<span class="number">32</span>));<span class="comment">//重置上下文执行mainfunc</span></span><br><span class="line">		swapcontext(&amp;S-&gt;main, &amp;C-&gt;ctx); <span class="comment">//保存当前上下文到main，跳转到ctx的上下文</span></span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	<span class="keyword">case</span> COROUTINE_SUSPEND: <span class="comment">//如果状态时暂停也就是之前yield过</span></span><br><span class="line">		<span class="built_in">memcpy</span>(S-&gt;<span class="built_in">stack</span> + STACK_SIZE - C-&gt;size, C-&gt;<span class="built_in">stack</span>, C-&gt;size); <span class="comment">//将协程之前保存的栈拷贝到调度器的共享栈</span></span><br><span class="line">		S-&gt;running = id;</span><br><span class="line">		C-&gt;status = COROUTINE_RUNNING;</span><br><span class="line">		swapcontext(&amp;S-&gt;main, &amp;C-&gt;ctx); <span class="comment">//同上</span></span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		assert(<span class="number">0</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>resume函数回复协程的运行，协程运行时使用共享栈，中断时将栈保存到私有栈中。</p>
-<p>所谓的共享栈，就是将协程所使用的栈设为调度器的栈，由于S-&gt;stack为低地址，S-&gt;stack+STACK_SIZE为高地址，使用时，栈顶栈底同时指向S-&gt;stack+STACK_SIZE，栈顶向低地址扩张。当yield时将已使用的栈拷贝到协程的私有栈当中，resume时将私有栈拷贝到S-&gt;stack中。</p>
-<p>这样做的好处是一个协程可以使用的栈空间很大，而且不会有提前分配导致的空间过大和浪费，只是拷贝对性能略有些影响。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">C-&gt;ctx.uc_stack.ss_sp = S-&gt;<span class="built_in">stack</span>; <span class="comment">//将协程栈设置为调度器的共享栈</span></span><br><span class="line">C-&gt;ctx.uc_stack.ss_size = STACK_SIZE; <span class="comment">//设置栈容量,使用时栈顶栈底同时指向S-&gt;stack+STACK_SIZE，栈顶向下扩张</span></span><br></pre></td></tr></table></figure></p>
-<p>这两行将协程栈设置为共享栈。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_save_stack(struct coroutine *C, <span class="keyword">char</span> *top) &#123; <span class="comment">//top为栈底</span></span><br><span class="line">	<span class="keyword">char</span> dummy = <span class="number">0</span>; <span class="comment">//这里定义一个char变量，dummy地址为栈顶</span></span><br><span class="line">	assert(top - &amp;dummy &lt;= STACK_SIZE); <span class="comment">//dummy地址减栈底地址为当前使用的栈大小</span></span><br><span class="line">	<span class="keyword">if</span> (C-&gt;cap &lt; top - &amp;dummy) &#123; <span class="comment">//如果当前协程栈大小小于已用大小，重新分配</span></span><br><span class="line">		<span class="built_in">free</span>(C-&gt;<span class="built_in">stack</span>);</span><br><span class="line">		C-&gt;cap = top-&amp;dummy;</span><br><span class="line">		C-&gt;<span class="built_in">stack</span> = <span class="built_in">malloc</span>(C-&gt;cap);</span><br><span class="line">	&#125;</span><br><span class="line">	C-&gt;size = top - &amp;dummy;</span><br><span class="line">	<span class="built_in">memcpy</span>(C-&gt;<span class="built_in">stack</span>, &amp;dummy, C-&gt;size); <span class="comment">//将共享栈拷贝到协程栈</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>这是保存栈的函数，这里用了一个很巧妙的方法，定义了一个局部变量dummy，此时dummy的地址应该是栈顶，而top是栈底，这样我们就知道当前协程使用的栈的大小。注意memcpy是从低地址开始拷贝的。</p>
-<p>剩下的代码就很简单了，我在github上对源码进行了详细的注释，只要理解了保存栈的过程应该就没什么难度了。</p>
-
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2018/10/29/cloudwu-coroutine/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
@@ -588,7 +548,7 @@
                     
                     
                     <p class="is-size-6 is-block">
-                        Your title
+                        Naive
                     </p>
                     
                     
@@ -604,7 +564,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Posts
+                        文章
                     </p>
                     <a href="/archives">
                         <p class="title has-text-weight-normal">
@@ -616,7 +576,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Kategorien
+                        分类
                     </p>
                     <a href="/categories">
                         <p class="title has-text-weight-normal">
@@ -628,7 +588,7 @@
             <div class="level-item has-text-centered is-marginless">
                 <div>
                     <p class="heading">
-                        Tags
+                        标签
                     </p>
                     <a href="/tags">
                         <p class="title has-text-weight-normal">
@@ -641,7 +601,7 @@
         
         <div class="level">
             <a class="level-item button is-link is-rounded" href="https://github.com/Nickqiaoo" target="_blank" rel="noopener">
-                Folgen</a>
+                关注我</a>
         </div>
         
         
@@ -652,34 +612,6 @@
                 title="Github" href="https://github.com/Nickqiaoo">
                 
                 <i class="fab fa-github"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Facebook" href="https://facebook.com">
-                
-                <i class="fab fa-facebook"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Twitter" href="https://twitter.com">
-                
-                <i class="fab fa-twitter"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="Dribbble" href="https://dribbble.com">
-                
-                <i class="fab fa-dribbble"></i>
-                
-            </a>
-            
-            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
-                title="RSS" href="/">
-                
-                <i class="fas fa-rss"></i>
                 
             </a>
             
@@ -698,7 +630,7 @@
     <div class="card-content">
         <div class="menu">
             <h3 class="menu-label">
-                Kategorien
+                分类
             </h3>
             <ul class="menu-list">
             <li>
@@ -743,14 +675,14 @@
     <div class="card-content">
         <div class="menu">
         <h3 class="menu-label">
-            Archive
+            归档
         </h3>
         <ul class="menu-list">
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
                 <span class="level-start">
-                    <span class="level-item">January 2020</span>
+                    <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">1</span>
@@ -761,7 +693,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2019/11/">
                 <span class="level-start">
-                    <span class="level-item">November 2019</span>
+                    <span class="level-item">十一月 2019</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">2</span>
@@ -772,7 +704,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2018/10/">
                 <span class="level-start">
-                    <span class="level-item">October 2018</span>
+                    <span class="level-item">十月 2018</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">4</span>
@@ -788,7 +720,7 @@
             <div class="card widget">
     <div class="card-content">
         <h3 class="menu-label">
-            Tag Cloud
+            标签云
         </h3>
         <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
@@ -810,7 +742,7 @@
     <div class="card-content">
         <div class="menu">
             <h3 class="menu-label">
-                Kategorien
+                分类
             </h3>
             <ul class="menu-list">
             <li>
@@ -855,14 +787,14 @@
     <div class="card-content">
         <div class="menu">
         <h3 class="menu-label">
-            Archive
+            归档
         </h3>
         <ul class="menu-list">
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
                 <span class="level-start">
-                    <span class="level-item">January 2020</span>
+                    <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">1</span>
@@ -873,7 +805,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2019/11/">
                 <span class="level-start">
-                    <span class="level-item">November 2019</span>
+                    <span class="level-item">十一月 2019</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">2</span>
@@ -884,7 +816,7 @@
         <li>
             <a class="level is-marginless" href="/archives/2018/10/">
                 <span class="level-start">
-                    <span class="level-item">October 2018</span>
+                    <span class="level-item">十月 2018</span>
                 </span>
                 <span class="level-end">
                     <span class="level-item tag">4</span>
@@ -900,7 +832,7 @@
         <div class="card widget">
     <div class="card-content">
         <h3 class="menu-label">
-            Tag Cloud
+            标签云
         </h3>
         <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
@@ -964,7 +896,7 @@
 </footer>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
-<script>moment.locale("zh-Hans");</script>
+<script>moment.locale("zh-CN");</script>
 
 
 <script>
@@ -1041,7 +973,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<a id="back-to-top" title="Zurück nach oben" href="javascript:;">
+<a id="back-to-top" title="回到顶端" href="javascript:;">
     <i class="fas fa-chevron-up"></i>
 </a>
 <script src="/js/back-to-top.js" defer></script>
@@ -1065,7 +997,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="searchbox ins-search">
     <div class="searchbox-container ins-search-container">
         <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Tippen Sie etwas..." />
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
             <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
         </div>
         <div class="searchbox-result-wrapper ins-section-wrapper">
@@ -1077,11 +1009,11 @@ document.addEventListener('DOMContentLoaded', function () {
     (function (window) {
         var INSIGHT_CONFIG = {
             TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Seiten',
-                CATEGORIES: 'Kategorien',
-                TAGS: 'Tags',
-                UNTITLED: '(Unbenannt)',
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
             },
             CONTENT_URL: '/content.json',
         };
@@ -1092,5 +1024,5 @@ document.addEventListener('DOMContentLoaded', function () {
 <link rel="stylesheet" href="/css/search.css">
 <link rel="stylesheet" href="/css/insight.css">
     
-<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"right","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
 </html>
