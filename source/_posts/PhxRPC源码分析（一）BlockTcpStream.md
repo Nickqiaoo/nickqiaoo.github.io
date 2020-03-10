@@ -5,6 +5,7 @@ tags:
 - PhxRPC
 categories: 
 - RPC
+permalink: phxrpc-tcpstream
 ---
 
 ## phxrpc简介

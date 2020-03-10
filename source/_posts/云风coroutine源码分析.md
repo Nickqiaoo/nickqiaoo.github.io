@@ -5,6 +5,7 @@ tags:
 - coroutine
 categories: 
 - 协程
+permalink: cloudwu-coroutine
 ---
 
 ## 前言

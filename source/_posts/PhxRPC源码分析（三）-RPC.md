@@ -5,6 +5,7 @@ tags:
 - PhxRPC
 categories: 
 - RPC
+permalink: phxrpc-overview
 ---
 
 ## RPC
