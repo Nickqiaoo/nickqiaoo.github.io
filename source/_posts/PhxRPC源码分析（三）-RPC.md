@@ -11,6 +11,9 @@ permalink: phxrpc-overview
 
 ## RPC
 
+最后这篇文章分析一下整体消息收发处理的逻辑。
+<!-- more -->
+
 整个RPC的定义基本都在`hsha_server`这个文件。主要有一下几个类：
 
 - `DataFlow` ：数据流，所有请求和应答分别保存在两个线程安全的队列中。
