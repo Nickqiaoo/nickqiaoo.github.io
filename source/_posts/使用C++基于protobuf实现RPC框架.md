@@ -13,7 +13,9 @@ permalink: protobuf-rpc
 
 实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。
 
-实现主要参考了muduo的RPC实现，纯异步。
+主要参考了muduo的RPC实现，纯异步。
+
+<!-- more -->
 
 ## pb生成代码分析
 

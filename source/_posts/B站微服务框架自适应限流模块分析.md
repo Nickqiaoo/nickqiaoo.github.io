@@ -12,6 +12,8 @@ permalink: bilibili-limit
 
 微服务中限流模块是必不可少的，理想的情况是使系统维持在能承受的负载范围内，没有堆积请求，请求处理时间就成了一个很好地判断指标，如果请求处理的时间过长，说明发生了堆积。传统的做法可能是硬性限制qps或队列长度或者根据cpu使用率等指标限制，无法实现自适应限流，根据请求处理时间使用算法限流可以很好地自适应系统的变化。
 
+<!-- more -->
+
 ## 限流接口
 
 ```go
@@ -293,7 +295,7 @@ func (v *Vegas) Acquire() (done func(time.Time, rate.Op), success bool) {
 ```
 总结一下，vegas算法根据统计出的最小时延和窗口期的平均时延作比较估算出等待中的请求数量，调整限制大小
 
-### 参考
+## 参考
 
-> https://queue.acm.org/appendices/codel.html \
+> https://queue.acm.org/appendices/codel.html 
 > http://blog.zxh.site/2019/07/01/tcp-vegas/ 

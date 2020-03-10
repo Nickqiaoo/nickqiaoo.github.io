@@ -7,7 +7,7 @@ title: Nickqiao's blog
 subtitle:
 description:
 author: Nickqiao
-language: zh-Hans
+language: zh-CN
 
 timezone:
 
@@ -93,7 +93,7 @@ live2d:
   model:
     use: live2d-widget-model-haru/02
   display:
-    position: left
+    position: right
     width: 200
     height: 400
   mobile:

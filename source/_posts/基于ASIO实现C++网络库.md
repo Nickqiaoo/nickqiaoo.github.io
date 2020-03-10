@@ -13,6 +13,8 @@ permalink: asio-netlib
 
 项目里的网络库用了asio，看了asio的文档后感觉用asio挺好用的，很容易实现一个网络库，而且有单独的版本可以不依赖boost，我们的目标是实现一个多线程，每个线程都有一个事件循环的异步网络库。
 
+<!-- more -->
+
 ## 功能划分
 
 整个网络库划分为Acceptor，Loop，LoopMgr，Session，TcpServer这几个类。
