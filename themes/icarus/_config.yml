@@ -75,7 +75,12 @@ search:
 # https://ppoffice.github.io/hexo-theme-icarus/categories/Plugins/Comment
 comment:
     # Name of the comment plugin
-    type: 
+    type: valine
+    app_id: GEUpeyXAnYQgY6q6sjvQRKk2-gzGzoHsz        # (required) LeanCloud application id
+    app_key: fWT2JT9CVaE3QUBrt0LQtSkL       # (required) LeanCloud application key
+    notify: false           # (optional) receive email notification
+    verify: false           # (optional) show verification code
+ 
 # Donation entries
 # https://ppoffice.github.io/hexo-theme-icarus/categories/Donation/
 # donate:
@@ -105,7 +110,7 @@ comment:
 # https://ppoffice.github.io/hexo-theme-icarus/categories/Plugins/Share
 share:
     # Share plugin name
-    type: 
+    type: sharejs
 # Sidebar settings.
 # Please be noted that a sidebar is only visible when it has at least one widget
 sidebar:
@@ -221,7 +226,7 @@ plugins:
     # https://ppoffice.github.io/hexo-theme-icarus/Plugins/General/site-analytics-plugin/#Baidu-Analytics
     baidu-analytics:
         # Baidu Analytics tracking id
-        tracking_id: 
+        tracking_id: 4ec873d57cfbe0b7343ca68359795bb1
     # Hotjar user feedback plugin
     # https://ppoffice.github.io/hexo-theme-icarus/Plugins/General/site-analytics-plugin/#Hotjar
     hotjar:
