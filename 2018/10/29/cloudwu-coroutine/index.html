@@ -19,7 +19,7 @@
 <meta property="og:description" content="前言现在C++的开发开始流行使用coroutine，也就是协程。我看腾讯的几个开源项目里面都有协程的实现。使用协程可以用同步的写法，达到异步的性能。它的基本原理其实就是在IO等待的时候切换出去，在适当的时刻再切换回来。云风用200行代码实现了一个最简单的协程，我们先看这个代码了解一下协程的原理，然后再看微信的libco实现。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-03-10T13:41:05.943Z">
+<meta property="og:updated_time" content="2020-03-10T13:52:36.811Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="云风coroutine源码分析">
 <meta name="twitter:description" content="前言现在C++的开发开始流行使用coroutine，也就是协程。我看腾讯的几个开源项目里面都有协程的实现。使用协程可以用同步的写法，达到异步的性能。它的基本原理其实就是在IO等待的时候切换出去，在适当的时刻再切换回来。云风用200行代码实现了一个最简单的协程，我们先看这个代码了解一下协程的原理，然后再看微信的libco实现。">
@@ -66,7 +66,7 @@
 var _hmt = _hmt || [];
 (function() {
     var hm = document.createElement("script");
-    hm.src = "//hm.baidu.com/hm.js?4ec873d57cfbe0b7343ca68359795bb1";
+    hm.src = "//hm.baidu.com/hm.js?7fea3e666dcef47fa5304eaaf000565b";
     var s = document.getElementsByTagName("script")[0];
     s.parentNode.insertBefore(hm, s);
 })();
