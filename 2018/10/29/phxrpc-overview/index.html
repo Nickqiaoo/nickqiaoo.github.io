@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>PhxRPC源码分析（三） RPC - Nickqiao&#39;s blog</title>
+
+
+    <meta name="description" content="RPC整个RPC的定义基本都在hsha_server这个文件。主要有一下几个类：  DataFlow ：数据流，所有请求和应答分别保存在两个线程安全的队列中。 HshaServerStat HshaServerQos： 统计运行状态，独立线程。 Worker ：独立的工作线程，如果是协程模式，每个worker会有多个协程。 WorkerPool：工作池，管理Worker。 HshaServerUn">
+<meta name="keywords" content="PhxRPC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PhxRPC源码分析（三） RPC">
+<meta property="og:url" content="http://nickqiaoo.github.io/2018/10/29/phxrpc-overview/index.html">
+<meta property="og:site_name" content="Nickqiao&#39;s blog">
+<meta property="og:description" content="RPC整个RPC的定义基本都在hsha_server这个文件。主要有一下几个类：  DataFlow ：数据流，所有请求和应答分别保存在两个线程安全的队列中。 HshaServerStat HshaServerQos： 统计运行状态，独立线程。 Worker ：独立的工作线程，如果是协程模式，每个worker会有多个协程。 WorkerPool：工作池，管理Worker。 HshaServerUn">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
+<meta property="og:updated_time" content="2020-03-10T08:22:45.423Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PhxRPC源码分析（三） RPC">
+<meta name="twitter:description" content="RPC整个RPC的定义基本都在hsha_server这个文件。主要有一下几个类：  DataFlow ：数据流，所有请求和应答分别保存在两个线程安全的队列中。 HshaServerStat HshaServerQos： 统计运行状态，独立线程。 Worker ：独立的工作线程，如果是协程模式，每个worker会有多个协程。 WorkerPool：工作池，管理Worker。 HshaServerUn">
+<meta name="twitter:image" content="http://nickqiaoo.github.io/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                Nickqiao&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+                <a class="navbar-item"
+                href="/about">关于</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="Katalog" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="Suche" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-10-29T18:41:25.000Z">2018-10-29</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/RPC/">RPC</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    7 minutes lesen (Über 1032 Worte)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                PhxRPC源码分析（三） RPC
+            
+        </h1>
+        <div class="content">
+            <h2 id="RPC"><a href="#RPC" class="headerlink" title="RPC"></a>RPC</h2><p>整个RPC的定义基本都在<code>hsha_server</code>这个文件。主要有一下几个类：</p>
+<ul>
+<li><code>DataFlow</code> ：数据流，所有请求和应答分别保存在两个线程安全的队列中。</li>
+<li><code>HshaServerStat</code> <code>HshaServerQos</code>： 统计运行状态，独立线程。</li>
+<li><code>Worker</code> ：独立的工作线程，如果是协程模式，每个<code>worker</code>会有多个协程。</li>
+<li><code>WorkerPool</code>：工作池，管理<code>Worker</code>。</li>
+<li><code>HshaServerUnit</code>：独立线程的工作单元，每个单元都有一个<code>WorkerPool</code> ,<code>UThreadEpollScheduler</code>和 <code>DataFlow</code>。</li>
+<li><code>HshaServerIO</code>：在<code>HshaServerUnit</code>线程处理IO事件。</li>
+<li><code>HshaServer</code>：server对象，有多个工作单元。</li>
+<li><code>HshaServerAcceptor</code>：接受连接，工作在主线程。</li>
+</ul>
+<p>运行起来有一个accept线程，每个unit有一个IO线程，多个worker线程。</p>
+<p>各个模块之间的关系如下</p>
+<p><img src="http://blog-1252613135.cosbj.myqcloud.com/RPC.png" alt="这里写图片描述"></p>
+<h2 id="DataFlow"><a href="#DataFlow" class="headerlink" title="DataFlow"></a>DataFlow</h2><p><code>DataFlow</code>包含request和response队列，并附加了时间戳和参数指针。</p>
+<h2 id="HshaServerStat-HshaServerQos"><a href="#HshaServerStat-HshaServerQos" class="headerlink" title="HshaServerStat HshaServerQos"></a>HshaServerStat HshaServerQos</h2><p>独立线程负责统计运行信息，线程绑定为<code>CallFunc</code>函数，使用了设置超时时间的条件变量，超时时间为1s，这样如果没有通知则每秒统计一次。</p>
+<h2 id="Worker"><a href="#Worker" class="headerlink" title="Worker"></a>Worker</h2><p>独立工作线程，绑定为<code>Worker::Func</code><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Worker::Func() &#123;</span><br><span class="line">    <span class="keyword">if</span> (uthread_count_ == <span class="number">0</span>) &#123;  <span class="comment">//如果没有设置协程数量</span></span><br><span class="line">        ThreadMode();  <span class="comment">//线程模式</span></span><br><span class="line">     &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        UThreadMode();  <span class="comment">//协程模式</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>线程模式直接从<code>DataFlow</code>中拉一个request然后执行<code>WorkerLogic</code>。<br>协程模式创建一个调度器并设置处理新请求的函数。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Worker::UThreadMode() &#123;</span><br><span class="line">    worker_scheduler_ = <span class="keyword">new</span> UThreadEpollScheduler(utherad_stack_size_, uthread_count_, <span class="literal">true</span>);</span><br><span class="line">    assert(worker_scheduler_ != <span class="literal">nullptr</span>);</span><br><span class="line">    worker_scheduler_-&gt;SetHandlerNewRequestFunc(bind(&amp;Worker::HandlerNewRequestFunc, <span class="keyword">this</span>));</span><br><span class="line">    worker_scheduler_-&gt;RunForever();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>HandlerNewRequestFunc</code>会将<code>WorkerLogic</code>的包装<code>UThreadFunc</code>加入调度器的任务队列。<br><code>WorkerLogic</code>是真正处理逻辑的函数，对没有超时的请求，会分发到具体的函数处理，最后将结果push到response队列中。</p>
+<h2 id="WorkPool"><a href="#WorkPool" class="headerlink" title="WorkPool"></a>WorkPool</h2><p><code>WorkPool</code>负责创建<code>Worker</code>。</p>
+<h2 id="HshaServerIO"><a href="#HshaServerIO" class="headerlink" title="HshaServerIO"></a>HshaServerIO</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> HshaServerIO::RunForever() &#123;</span><br><span class="line">    scheduler_-&gt;SetHandlerAcceptedFdFunc(bind(&amp;HshaServerIO::HandlerAcceptedFd, <span class="keyword">this</span>));</span><br><span class="line">    scheduler_-&gt;SetActiveSocketFunc(bind(&amp;HshaServerIO::ActiveSocketFunc, <span class="keyword">this</span>));</span><br><span class="line">    scheduler_-&gt;RunForever();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>RunForever</code>设置<code>Run</code>中执行的两个回调函数分别处理新建连接和写response</p>
+<p><code>AddAcceptedFd</code>函数负责将已连接的fd放入<code>accepted_fd_list_</code>中。</p>
+<p><code>HandlerAcceptedFd</code>函数从队列中取出已连接的fd，并绑定<code>IOFunc</code>函数加入协程调度器的任务队列。</p>
+<p><code>IOFunc</code>函数新建一个关联socketfd的<code>UThreadTcpStream</code>，然后判断请求协议的类型并解析请求，将解析完成的request push到<code>DataFlow</code>中，<br>然后调用<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">worker_pool_-&gt;Notify();</span><br></pre></td></tr></table></figure></p>
+<p>这一步针对<code>UThreadMode</code>，worker_pool的<code>Notify</code>函数会调用worker的<code>Notify</code>来通知worker的<code>UThreadEpollScheduler</code>，接下来<code>IOFunc</code>调用<code>UThreadWait</code>设置一个超时时间<code>Yield</code>出去。</p>
+<p>此时worker的<code>UThreadEpollScheduler</code>在<code>Run</code>函数处轮询，接下来会执行开启<code>UThreadMode</code>时绑定的<code>handler_new_request_func_</code>也就是<code>Worker::HandlerNewRequestFunc</code>，这个函数将从<code>DataFlow</code>中拉取request然后将<code>WorkerLogic</code>加入<code>worker_scheduler_</code>的任务队列。这样开始执行<code>WorkerLogic</code>，执行完逻辑后<code>WorkerLogic</code>将response加入<code>DataFlow</code>的队列中。最后执行<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pool_-&gt;scheduler_-&gt;NotifyEpoll();</span><br></pre></td></tr></table></figure></p>
+<p>这一步调用worker_pool_的<code>UThreadEpollScheduler</code>的<code>NotifyEpoll</code>，接下来流程回到pool_-&gt;scheduler_的<code>Run</code>中，此时执行<code>active_socket_func_</code>从<code>DataFlow</code>中取出response，将其包装为该socket的args并返回，最后<code>Resume</code>到此socket的协程也就是之前的<code>IOFunc</code>，将response <code>send</code>出去。</p>
+<p>这个应该是整个流程最复杂的一个函数了，主要是worker线程和workpool的<code>UThreadEpollScheduler</code>的互相唤醒。一次完整的收发数据流程如下：</p>
+<p><img src="http://blog-1252613135.cosbj.myqcloud.com/PhxRPC.png" alt="这里写图片描述"></p>
+<h2 id="HshaServerUnit"><a href="#HshaServerUnit" class="headerlink" title="HshaServerUnit"></a>HshaServerUnit</h2><p><code>HshaServerUnit</code>是IO线程，其<code>RunFunc</code> <code>AddAcceptedFd</code>调用的都是成员<code>HshaServerIO</code>的相应函数。</p>
+<h2 id="HshaServerAcceptor"><a href="#HshaServerAcceptor" class="headerlink" title="HshaServerAcceptor"></a>HshaServerAcceptor</h2><p><code>HshaServerAcceptor</code>的<code>LoopAccept</code>函数负责accept新连接，<code>idx_</code>变量通过每次取余的方式来确定将accept的fd放到哪个<code>HshaServerUnit</code>。</p>
+<h2 id="HshaServer"><a href="#HshaServer" class="headerlink" title="HshaServer"></a>HshaServer</h2><p><code>HshaServer</code>获取配置文件中的IO线程数量创建相同数量的<code>HshaServerUnit</code>，根据配置文件的工作线程数量初始化其参数，然后push到<code>server_unit_list_</code>中。</p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/PhxRPC/">PhxRPC</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/11/20/asio-netlib/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">基于ASIO实现C++网络库</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/10/29/uthread-context/">
+                <span class="level-item">PhxRPC源码分析（二）uthread_context</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="" src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/avatar.png" alt="Nickqiao">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        Nickqiao
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Your title
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>Shanghai</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        Posts
+                    </p>
+                    <a href="/archives">
+                        <p class="title has-text-weight-normal">
+                            7
+                        </p>
+                    </a>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        Kategorien
+                    </p>
+                    <a href="/categories">
+                        <p class="title has-text-weight-normal">
+                            4
+                        </p>
+                    </a>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        Tags
+                    </p>
+                    <a href="/tags">
+                        <p class="title has-text-weight-normal">
+                            9
+                        </p>
+                    </a>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/Nickqiaoo" target="_blank" rel="noopener">
+                Folgen</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
+                title="Github" href="https://github.com/Nickqiaoo">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
+                title="Facebook" href="https://facebook.com">
+                
+                <i class="fab fa-facebook"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
+                title="Twitter" href="https://twitter.com">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
+                title="Dribbble" href="https://dribbble.com">
+                
+                <i class="fab fa-dribbble"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" rel="noopener"
+                title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+
+    <div class="card widget" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    Katalog
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#RPC">
+        <span class="has-mr-6">1</span>
+        <span>RPC</span>
+        </a></li><li>
+        <a class="is-flex" href="#DataFlow">
+        <span class="has-mr-6">2</span>
+        <span>DataFlow</span>
+        </a></li><li>
+        <a class="is-flex" href="#HshaServerStat-HshaServerQos">
+        <span class="has-mr-6">3</span>
+        <span>HshaServerStat HshaServerQos</span>
+        </a></li><li>
+        <a class="is-flex" href="#Worker">
+        <span class="has-mr-6">4</span>
+        <span>Worker</span>
+        </a></li><li>
+        <a class="is-flex" href="#WorkPool">
+        <span class="has-mr-6">5</span>
+        <span>WorkPool</span>
+        </a></li><li>
+        <a class="is-flex" href="#HshaServerIO">
+        <span class="has-mr-6">6</span>
+        <span>HshaServerIO</span>
+        </a></li><li>
+        <a class="is-flex" href="#HshaServerUnit">
+        <span class="has-mr-6">7</span>
+        <span>HshaServerUnit</span>
+        </a></li><li>
+        <a class="is-flex" href="#HshaServerAcceptor">
+        <span class="has-mr-6">8</span>
+        <span>HshaServerAcceptor</span>
+        </a></li><li>
+        <a class="is-flex" href="#HshaServer">
+        <span class="has-mr-6">9</span>
+        <span>HshaServer</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                Kategorien
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/C/">
+            <span class="level-start">
+                <span class="level-item">C++</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/RPC/">
+            <span class="level-start">
+                <span class="level-item">RPC</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/协程/">
+            <span class="level-start">
+                <span class="level-item">协程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/微服务/">
+            <span class="level-start">
+                <span class="level-item">微服务</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            Archive
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2020/01/">
+                <span class="level-start">
+                    <span class="level-item">January 2020</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/11/">
+                <span class="level-start">
+                    <span class="level-item">November 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/10/">
+                <span class="level-start">
+                    <span class="level-item">October 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            Tag Cloud
+        </h3>
+        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                Kategorien
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/C/">
+            <span class="level-start">
+                <span class="level-item">C++</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/RPC/">
+            <span class="level-start">
+                <span class="level-item">RPC</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/协程/">
+            <span class="level-start">
+                <span class="level-item">协程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/微服务/">
+            <span class="level-start">
+                <span class="level-item">微服务</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            Archive
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2020/01/">
+                <span class="level-start">
+                    <span class="level-item">January 2020</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/11/">
+                <span class="level-start">
+                    <span class="level-item">November 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/10/">
+                <span class="level-start">
+                    <span class="level-item">October 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+    
+        <div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            Tag Cloud
+        </h3>
+        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    Nickqiao&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 Nickqiao&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-Hans");</script>
+
+
+<script>
+var IcarusThemeSettings = {
+    site: {
+        url: 'http://nickqiaoo.github.io',
+        external_link: {"enable":true,"exclude":[]}
+    },
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+
+
+<script src="/js/animation.js"></script>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+
+<a id="back-to-top" title="Zurück nach oben" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="Tippen Sie etwas..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: 'Posts',
+                PAGES: 'Seiten',
+                CATEGORIES: 'Kategorien',
+                TAGS: 'Tags',
+                UNTITLED: '(Unbenannt)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/haru02.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":true},"react":{"opacity":0.7},"log":false});</script></body>
+</html>
