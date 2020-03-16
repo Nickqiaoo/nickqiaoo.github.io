@@ -99,7 +99,7 @@ Logic_Stub stub;
 stub.Ping(NULL, request, response, done);
 ```
 
-##RpcChannel实现
+## RpcChannel实现
 
 RpcChannel代码中的注释写的很清楚：
 ```c++
