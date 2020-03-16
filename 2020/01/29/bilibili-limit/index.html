@@ -19,7 +19,7 @@
 <meta property="og:description" content="微服务中限流模块是必不可少的，理想的情况是使系统维持在能承受的负载范围内，没有堆积请求，请求处理时间就成了一个很好地判断指标，如果请求处理的时间过长，说明发生了堆积。传统的做法可能是硬性限制qps或队列长度或者根据cpu使用率等指标限制，无法实现自适应限流，根据请求处理时间使用算法限流可以很好地自适应系统的变化。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-03-15T15:58:37.139Z">
+<meta property="og:updated_time" content="2020-03-16T09:44:04.771Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="B站微服务框架自适应限流模块分析">
 <meta name="twitter:description" content="微服务中限流模块是必不可少的，理想的情况是使系统维持在能承受的负载范围内，没有堆积请求，请求处理时间就成了一个很好地判断指标，如果请求处理的时间过长，说明发生了堆积。传统的做法可能是硬性限制qps或队列长度或者根据cpu使用率等指标限制，无法实现自适应限流，根据请求处理时间使用算法限流可以很好地自适应系统的变化。">
@@ -214,6 +214,13 @@ var _hmt = _hmt || [];
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/03/15/bilibili-goim/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">B站直播弹幕系统goim实现分析</span>
+            </a>
+        </div>
+        
         
         <div class="level-end">
             <a class="level level-item has-link-grey  article-nav-next" href="/2019/11/29/protobuf-rpc/">
@@ -292,7 +299,7 @@ var _hmt = _hmt || [];
                     </p>
                     <a href="/archives">
                         <p class="title has-text-weight-normal">
-                            7
+                            8
                         </p>
                     </a>
                 </div>
@@ -304,7 +311,7 @@ var _hmt = _hmt || [];
                     </p>
                     <a href="/categories">
                         <p class="title has-text-weight-normal">
-                            4
+                            5
                         </p>
                     </a>
                 </div>
@@ -316,7 +323,7 @@ var _hmt = _hmt || [];
                     </p>
                     <a href="/tags">
                         <p class="title has-text-weight-normal">
-                            9
+                            11
                         </p>
                     </a>
                 </div>
@@ -417,6 +424,14 @@ var _hmt = _hmt || [];
             <span class="level-end">
                 <span class="level-item tag">1</span>
             </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/系统设计/">
+            <span class="level-start">
+                <span class="level-item">系统设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
         </a></li>
             </ul>
         </div>
@@ -430,6 +445,17 @@ var _hmt = _hmt || [];
             归档
         </h3>
         <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2020/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2020</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
@@ -474,7 +500,7 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             标签云
         </h3>
-        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
+        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/IM/" style="font-size: 10px;">IM</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/goim/" style="font-size: 10px;">goim</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
 </div>
         
@@ -529,6 +555,14 @@ var _hmt = _hmt || [];
             <span class="level-end">
                 <span class="level-item tag">1</span>
             </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/系统设计/">
+            <span class="level-start">
+                <span class="level-item">系统设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
         </a></li>
             </ul>
         </div>
@@ -542,6 +576,17 @@ var _hmt = _hmt || [];
             归档
         </h3>
         <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2020/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2020</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
@@ -586,7 +631,7 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             标签云
         </h3>
-        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
+        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/IM/" style="font-size: 10px;">IM</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/goim/" style="font-size: 10px;">goim</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
 </div>
     

@@ -19,7 +19,7 @@
 <meta property="og:description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 主要参考了muduo的RPC实现，纯异步。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-03-15T15:58:37.139Z">
+<meta property="og:updated_time" content="2020-03-16T09:44:04.771Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="使用C++基于protobuf实现RPC框架">
 <meta name="twitter:description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 主要参考了muduo的RPC实现，纯异步。">
@@ -173,8 +173,7 @@ var _hmt = _hmt || [];
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Logic</span> :</span> <span class="keyword">public</span> ::google::protobuf::Service &#123;</span><br><span class="line"> <span class="keyword">protected</span>:</span><br><span class="line">  <span class="comment">// This class should be treated as an abstract interface.</span></span><br><span class="line">  <span class="function"><span class="keyword">inline</span> <span class="title">Logic</span><span class="params">()</span> </span>&#123;&#125;;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">virtual</span> ~Logic();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">typedef</span> Logic_Stub Stub;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">static</span> <span class="keyword">const</span> ::google::protobuf::<span class="function">ServiceDescriptor* <span class="title">descriptor</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Ping</span><span class="params">(::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                       <span class="keyword">const</span> ::logic::PingReq* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::logic::PingReply* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// implements Service ----------------------------------------------</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">ServiceDescriptor* <span class="title">GetDescriptor</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">CallMethod</span><span class="params">(<span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                  <span class="keyword">const</span> ::google::protobuf::Message* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::Message* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                  ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">Message&amp; <span class="title">GetRequestPrototype</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method)</span> <span class="keyword">const</span></span>;</span><br><span class="line">  <span class="keyword">const</span> ::google::protobuf::<span class="function">Message&amp; <span class="title">GetResponsePrototype</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> ::google::protobuf::MethodDescriptor* method)</span> <span class="keyword">const</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Logic);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Logic_Stub</span> :</span> <span class="keyword">public</span> Logic &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  Logic_Stub(::google::protobuf::RpcChannel* channel);</span><br><span class="line">  Logic_Stub(::google::protobuf::RpcChannel* channel,</span><br><span class="line">                   ::google::protobuf::Service::ChannelOwnership ownership);</span><br><span class="line">  ~Logic_Stub();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">inline</span> ::google::protobuf::<span class="function">RpcChannel* <span class="title">channel</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> channel_; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// implements Logic ------------------------------------------</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Ping</span><span class="params">(::google::protobuf::RpcController* controller,</span></span></span><br><span class="line"><span class="function"><span class="params">                       <span class="keyword">const</span> ::logic::PingReq* request,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::logic::PingReply* response,</span></span></span><br><span class="line"><span class="function"><span class="params">                       ::google::protobuf::Closure* done)</span></span>;</span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  ::google::protobuf::RpcChannel* channel_;</span><br><span class="line">  <span class="keyword">bool</span> owns_channel_;</span><br><span class="line">  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Logic_Stub);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 <p>服务端的使用方法一般为<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LogicServiceImpl logicservice_;</span><br><span class="line">rpcserver.registerService(&amp;logicservice_);</span><br><span class="line">rpcserver.start();</span><br></pre></td></tr></table></figure></p>
 <p>客户端直接<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Logic_Stub stub;</span><br><span class="line">stub.Ping(<span class="literal">NULL</span>, request, response, done);</span><br></pre></td></tr></table></figure></p>
-<p>##RpcChannel实现</p>
-<p>RpcChannel代码中的注释写的很清楚：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Abstract interface for an RPC channel.  An RpcChannel represents a</span></span><br><span class="line"><span class="comment">// communication line to a Service which can be used to call that Service's</span></span><br><span class="line"><span class="comment">// methods.</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="RpcChannel实现"><a href="#RpcChannel实现" class="headerlink" title="RpcChannel实现"></a>RpcChannel实现</h2><p>RpcChannel代码中的注释写的很清楚：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Abstract interface for an RPC channel.  An RpcChannel represents a</span></span><br><span class="line"><span class="comment">// communication line to a Service which can be used to call that Service's</span></span><br><span class="line"><span class="comment">// methods.</span></span><br></pre></td></tr></table></figure></p>
 <p>代码注释中看到了protobuf的作者也有Jeff Dean…</p>
 <p>我们继承protobuf的RpcChannel，持有网络库中的Session类，并实现Session中的回调函数，将Session中的onMessage回调设置为RpcChannel的onMessage函数，实现消息的收发，所以首先需要设计一下RPC协议，我设计了一个简单的二进制协议：</p>
 <p><img src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/RpcProtocol.png" alt="rpcprotocol"></p>
@@ -303,7 +302,7 @@ var _hmt = _hmt || [];
                     </p>
                     <a href="/archives">
                         <p class="title has-text-weight-normal">
-                            7
+                            8
                         </p>
                     </a>
                 </div>
@@ -315,7 +314,7 @@ var _hmt = _hmt || [];
                     </p>
                     <a href="/categories">
                         <p class="title has-text-weight-normal">
-                            4
+                            5
                         </p>
                     </a>
                 </div>
@@ -327,7 +326,7 @@ var _hmt = _hmt || [];
                     </p>
                     <a href="/tags">
                         <p class="title has-text-weight-normal">
-                            9
+                            11
                         </p>
                     </a>
                 </div>
@@ -368,20 +367,24 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1</span>
         <span>pb生成代码分析</span>
         </a></li><li>
-        <a class="is-flex" href="#Client接收回复">
+        <a class="is-flex" href="#RpcChannel实现">
         <span class="has-mr-6">2</span>
+        <span>RpcChannel实现</span>
+        </a></li><li>
+        <a class="is-flex" href="#Client接收回复">
+        <span class="has-mr-6">3</span>
         <span>Client接收回复</span>
         </a></li><li>
         <a class="is-flex" href="#Server端接收请求">
-        <span class="has-mr-6">3</span>
+        <span class="has-mr-6">4</span>
         <span>Server端接收请求</span>
         </a></li><li>
         <a class="is-flex" href="#Client发送请求">
-        <span class="has-mr-6">4</span>
+        <span class="has-mr-6">5</span>
         <span>Client发送请求</span>
         </a></li><li>
         <a class="is-flex" href="#总结">
-        <span class="has-mr-6">5</span>
+        <span class="has-mr-6">6</span>
         <span>总结</span>
         </a></li></ul>
             </div>
@@ -432,6 +435,14 @@ var _hmt = _hmt || [];
             <span class="level-end">
                 <span class="level-item tag">1</span>
             </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/系统设计/">
+            <span class="level-start">
+                <span class="level-item">系统设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
         </a></li>
             </ul>
         </div>
@@ -445,6 +456,17 @@ var _hmt = _hmt || [];
             归档
         </h3>
         <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2020/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2020</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
@@ -489,7 +511,7 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             标签云
         </h3>
-        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
+        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/IM/" style="font-size: 10px;">IM</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/goim/" style="font-size: 10px;">goim</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
 </div>
         
@@ -544,6 +566,14 @@ var _hmt = _hmt || [];
             <span class="level-end">
                 <span class="level-item tag">1</span>
             </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/系统设计/">
+            <span class="level-start">
+                <span class="level-item">系统设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
         </a></li>
             </ul>
         </div>
@@ -557,6 +587,17 @@ var _hmt = _hmt || [];
             归档
         </h3>
         <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2020/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2020</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
         
         <li>
             <a class="level is-marginless" href="/archives/2020/01/">
@@ -601,7 +642,7 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             标签云
         </h3>
-        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
+        <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/IM/" style="font-size: 10px;">IM</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/goim/" style="font-size: 10px;">goim</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
 </div>
     
