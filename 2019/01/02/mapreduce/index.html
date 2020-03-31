@@ -7,17 +7,22 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>标签: 微服务 - Nickqiao&#39;s blog</title>
+<title>MIT6.824 Lab1 MapReduce实现 - Nickqiao&#39;s blog</title>
 
 
-    <meta property="og:type" content="website">
-<meta property="og:title" content="Nickqiao&#39;s blog">
-<meta property="og:url" content="http://nickqiaoo.github.io/tags/微服务/index.html">
+    <meta name="description" content="MIT6.824是公认的分布式系统经典课程，这篇文章主要介绍Lab1 MapReduce的实现。">
+<meta name="keywords" content="分布式,6.824,MapReduce">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.824 Lab1 MapReduce实现">
+<meta property="og:url" content="http://nickqiaoo.github.io/2019/01/02/mapreduce/index.html">
 <meta property="og:site_name" content="Nickqiao&#39;s blog">
+<meta property="og:description" content="MIT6.824是公认的分布式系统经典课程，这篇文章主要介绍Lab1 MapReduce的实现。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
+<meta property="og:updated_time" content="2020-03-31T06:41:07.031Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Nickqiao&#39;s blog">
+<meta name="twitter:title" content="MIT6.824 Lab1 MapReduce实现">
+<meta name="twitter:description" content="MIT6.824是公认的分布式系统经典课程，这篇文章主要介绍Lab1 MapReduce的实现。">
 <meta name="twitter:image" content="http://nickqiaoo.github.io/images/og_image.png">
 
 
@@ -112,6 +117,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -125,35 +134,24 @@ var _hmt = _hmt || [];
     <section class="section">
         <div class="container">
             <div class="columns">
-                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main"><div class="card">
-    <div class="card-content">
-        <nav class="breadcrumb" aria-label="breadcrumbs">
-        <ul>
-            <li><a href="/tags">标签</a></li>
-            <li class="is-active"><a href="#" aria-current="page">微服务</a></li>
-        </ul>
-        </nav>
-    </div>
-</div>
-
-    
+                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main">
 <div class="card">
     
     <div class="card-content article ">
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2020-01-29T20:00:00.000Z">2020-01-29</time>
+                <time class="level-item has-text-grey" datetime="2019-01-02T22:00:00.000Z">2019-01-02</time>
                 
                 <div class="level-item">
-                <a class="has-link-grey -link" href="/categories/微服务/">微服务</a>
+                <a class="has-link-grey -link" href="/categories/分布式/">分布式</a>
                 </div>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    14 分钟 读完 (大约 2027 个字)
+                    7 分钟 读完 (大约 1005 个字)
                 </span>
                 
                 
@@ -162,22 +160,48 @@ var _hmt = _hmt || [];
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                <a class="has-link-black-ter" href="/2020/01/29/bilibili-limit/">B站微服务框架自适应限流模块分析</a>
+                MIT6.824 Lab1 MapReduce实现
             
         </h1>
         <div class="content">
-            <p>微服务中限流模块是必不可少的，理想的情况是使系统维持在能承受的负载范围内，没有堆积请求，请求处理时间就成了一个很好地判断指标，如果请求处理的时间过长，说明发生了堆积。传统的做法可能是硬性限制qps或队列长度或者根据cpu使用率等指标限制，无法实现自适应限流，根据请求处理时间使用算法限流可以很好地自适应系统的变化。</p>
+            <p>MIT6.824是公认的分布式系统经典课程，这篇文章主要介绍Lab1 MapReduce的实现。</p>
+<a id="more"></a>
+<h2 id="MapReduce简介"><a href="#MapReduce简介" class="headerlink" title="MapReduce简介"></a>MapReduce简介</h2><p><img src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/mapreduce.png" alt="MapReduce"></p>
+<p>这是来自MapReduce论文中的图片，描述了整个MapReduce的过程。其本质就是将一个大数据量的任务首先切分给多个mapper，每个mapper再用用户定义的map策略进行分类，分类后每个reducer负责一部分数据的计算。</p>
+<h2 id="Part-I"><a href="#Part-I" class="headerlink" title="Part I"></a>Part I</h2><p>part I的任务是完成doMap和doReduce函数，代码中的注释写的非常非常清楚，基本上翻译一下就行了…</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doMap</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">	jobName <span class="keyword">string</span>, // the name of the MapReduce job</span></span></span><br><span class="line"><span class="function"><span class="params">	mapTask <span class="keyword">int</span>, // which <span class="keyword">map</span> task this is</span></span></span><br><span class="line"><span class="function"><span class="params">	inFile <span class="keyword">string</span>,</span></span></span><br><span class="line">	nReduce int, // the number of reduce task that will be run ("R" in the paper)</span><br><span class="line">	mapF <span class="function"><span class="keyword">func</span><span class="params">(filename <span class="keyword">string</span>, contents <span class="keyword">string</span>)</span> []<span class="title">KeyValue</span>,</span></span><br><span class="line"><span class="function">)</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p>看一下doMap函数的定义，很好实现，我就不放代码了，这个函数从inFile中读取数据，调用用户定义的mapF函数，把数据切分为kv对，然后创建nReduce个中间文件，通过一个hash函数对key进行hash将kv对写到不同的中间文件中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doReduce</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">	jobName <span class="keyword">string</span>, // the name of the whole MapReduce job</span></span></span><br><span class="line"><span class="function"><span class="params">	reduceTask <span class="keyword">int</span>, // which reduce task this is</span></span></span><br><span class="line"><span class="function"><span class="params">	outFile <span class="keyword">string</span>, // write the output here</span></span></span><br><span class="line">	nMap int, // the number of map tasks that were run ("M" in the paper)</span><br><span class="line">	reduceF <span class="function"><span class="keyword">func</span><span class="params">(key <span class="keyword">string</span>, values []<span class="keyword">string</span>)</span> <span class="title">string</span>,</span></span><br><span class="line"><span class="function">)</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p>doReduce函数将各个mapper生成的对应自己的reduce中间文件中的kv对读到内存中，然后按key排序，将相同的key的value放在一起调用用户定义的reduceF函数，将返回值作为value写入最终的结果文件。</p>
+<h2 id="Part-II"><a href="#Part-II" class="headerlink" title="Part II"></a>Part II</h2><p>这部分是用MapReduce来解决一个经典问题：wordcount，利用part I中我们写好的框架，只需要实现mapF和reduceF函数就可以了，我们既然要统计单词的次数，那key就是单词，value其实随意，这里我们就设成1，因为在reduce中我们有values的长度就知道出现的次数了。mapF实现如下：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mapF</span><span class="params">(filename <span class="keyword">string</span>, contents <span class="keyword">string</span>)</span> []<span class="title">mapreduce</span>.<span class="title">KeyValue</span></span> &#123;</span><br><span class="line">	<span class="comment">// Your code here (Part II).</span></span><br><span class="line">	<span class="keyword">var</span> kv  []mapreduce.KeyValue</span><br><span class="line">	kstring := strings.FieldsFunc(contents, <span class="function"><span class="keyword">func</span><span class="params">(c <span class="keyword">rune</span>)</span> <span class="title">bool</span></span> &#123; <span class="keyword">return</span> !unicode.IsLetter(c) &amp;&amp; !unicode.IsNumber(c) &#125;)</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> kstring &#123;</span><br><span class="line">		kv = <span class="built_in">append</span>(kv, mapreduce.KeyValue&#123;v, <span class="string">"1"</span>&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> kv</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>reduceF中我们直接计算切片长度就知道次数了：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">reduceF</span><span class="params">(key <span class="keyword">string</span>, values []<span class="keyword">string</span>)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	<span class="comment">// Your code here (Part II).</span></span><br><span class="line">	<span class="keyword">return</span> strconv.Itoa(<span class="built_in">len</span>(values))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>就是这么简单，通过MapReduce我们就可以完成大数据下的统计任务。</p>
+<h2 id="Part-III-amp-Part-IV"><a href="#Part-III-amp-Part-IV" class="headerlink" title="Part III &amp; Part IV"></a>Part III &amp; Part IV</h2><p>这两部分是实现master的schedule函数，来实现master通过rpc向worker节点派发任务。</p>
+<p>我们建立一个保存worker信息的channel，派发任务时从workers或者registerchan中取worker，起一个goroutine执行完后再放入workers中，对于调用返回失败派发到其他worker中直到成功为止。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">   <span class="comment">// Your code here (Part III, Part IV).</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line">workers := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">string</span>, <span class="number">5</span>)</span><br><span class="line"><span class="keyword">var</span> wg sync.WaitGroup</span><br><span class="line"><span class="keyword">var</span> worker <span class="keyword">string</span></span><br><span class="line"><span class="keyword">for</span> i := <span class="number">0</span>; i &lt; ntasks; i++ &#123;</span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> worker = &lt;-workers:</span><br><span class="line">	<span class="keyword">case</span> worker = &lt;-registerChan:</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(j <span class="keyword">int</span>, worker <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">		wg.Add(<span class="number">1</span>)</span><br><span class="line">		args := &amp;DoTaskArgs&#123;jobName, mapFiles[j], phase, j, n_other&#125;</span><br><span class="line">		<span class="keyword">for</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> call(worker, <span class="string">"Worker.DoTask"</span>, args, <span class="literal">nil</span>) &#123;</span><br><span class="line">				workers &lt;- worker</span><br><span class="line">				wg.Done()</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">select</span> &#123;</span><br><span class="line">				<span class="keyword">case</span> worker = &lt;-workers:</span><br><span class="line">				<span class="keyword">case</span> worker = &lt;-registerChan:</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;(i, worker)</span><br><span class="line">&#125;</span><br><span class="line">wg.Wait()</span><br></pre></td></tr></table></figure></p>
+<h2 id="Part-V"><a href="#Part-V" class="headerlink" title="Part V"></a>Part V</h2><p>这部分是用MapReduce实现倒排索引，还是实现mapF和reduceF函数。</p>
+<p>倒排索引我们需要通过key找到对应的文件，所以切分的时候value就是文件名：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mapF</span><span class="params">(document <span class="keyword">string</span>, value <span class="keyword">string</span>)</span> <span class="params">(res []mapreduce.KeyValue)</span></span> &#123;</span><br><span class="line">	<span class="comment">// Your code here (Part V).</span></span><br><span class="line">	<span class="keyword">var</span> kv []mapreduce.KeyValue</span><br><span class="line">	kstring := strings.FieldsFunc(value, <span class="function"><span class="keyword">func</span><span class="params">(c <span class="keyword">rune</span>)</span> <span class="title">bool</span></span> &#123; <span class="keyword">return</span> !unicode.IsLetter(c) &#125;)</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> kstring &#123;</span><br><span class="line">		kv = <span class="built_in">append</span>(kv, mapreduce.KeyValue&#123;v, document&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> kv</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在reduce中我们只需要对value去重就可以了：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">reduceF</span><span class="params">(key <span class="keyword">string</span>, values []<span class="keyword">string</span>)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	<span class="comment">// Your code here (Part V).</span></span><br><span class="line">	sort.Strings(values)</span><br><span class="line">	<span class="keyword">var</span> s <span class="keyword">string</span></span><br><span class="line">	tmp := values[<span class="number">0</span>]</span><br><span class="line">	num := <span class="number">1</span></span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> values &#123;</span><br><span class="line">		<span class="keyword">if</span> tmp == v &#123;</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			s += tmp</span><br><span class="line">			s += <span class="string">","</span></span><br><span class="line">			tmp = v</span><br><span class="line">			num++</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	s += values[<span class="built_in">len</span>(values)<span class="number">-1</span>]</span><br><span class="line">	s = strconv.Itoa(num) + <span class="string">" "</span> + s</span><br><span class="line">	<span class="keyword">return</span> s</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>MapReduce的思想确实牛逼，大数据处理的利器。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a href="http://nil.csail.mit.edu/6.824/2018/labs/lab-1.html">http://nil.csail.mit.edu/6.824/2018/labs/lab-1.html</a></p>
+</blockquote>
+
         </div>
         
-        
-        <div class="level is-mobile">
+        <div class="level is-size-7 is-uppercase">
             <div class="level-start">
                 <div class="level-item">
-                <a class="button is-size-7 is-light" href="/2020/01/29/bilibili-limit/#more">阅读更多</a>
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/6-824/">6.824</a>, <a class="has-link-grey -link" href="/tags/MapReduce/">MapReduce</a>, <a class="has-link-grey -link" href="/tags/分布式/">分布式</a>
                 </div>
             </div>
         </div>
         
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
         
     </div>
 </div>
@@ -186,9 +210,49 @@ var _hmt = _hmt || [];
 
 
 
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/11/20/asio-netlib/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">基于ASIO实现C++网络库</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/10/29/phxrpc-overview/">
+                <span class="level-item">PhxRPC源码分析（三） RPC</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
 
 
 
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="valine-thread" class="content"></div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js"></script>
+<script>
+    new Valine({
+        el: '#valine-thread' ,
+        notify: false,
+        verify: false,
+        app_id: 'GEUpeyXAnYQgY6q6sjvQRKk2-gzGzoHsz',
+        app_key: 'fWT2JT9CVaE3QUBrt0LQtSkL',
+        placeholder: 'Say something...'
+    });
+</script>
+
+    </div>
+</div>
 </div>
                 
 
@@ -287,6 +351,42 @@ var _hmt = _hmt || [];
 </div>
     
         
+
+    <div class="card widget" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#MapReduce简介">
+        <span class="has-mr-6">1</span>
+        <span>MapReduce简介</span>
+        </a></li><li>
+        <a class="is-flex" href="#Part-I">
+        <span class="has-mr-6">2</span>
+        <span>Part I</span>
+        </a></li><li>
+        <a class="is-flex" href="#Part-II">
+        <span class="has-mr-6">3</span>
+        <span>Part II</span>
+        </a></li><li>
+        <a class="is-flex" href="#Part-III-amp-Part-IV">
+        <span class="has-mr-6">4</span>
+        <span>Part III &amp; Part IV</span>
+        </a></li><li>
+        <a class="is-flex" href="#Part-V">
+        <span class="has-mr-6">5</span>
+        <span>Part V</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">6</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
     
     
         <div class="column-right-shadow is-hidden-widescreen ">
