@@ -1,6 +1,6 @@
 ---
 title: B站直播弹幕系统goim实现分析
-date: 2020-02-15 22:00:00
+date: 2020-12-15 22:00:00
 toc: true
 tags: 
 - goim
