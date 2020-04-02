@@ -19,7 +19,7 @@
 <meta property="og:description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 主要参考了muduo的RPC实现，纯异步。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-03-31T06:41:07.031Z">
+<meta property="og:updated_time" content="2020-04-02T09:23:40.191Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="使用C++基于protobuf实现RPC框架">
 <meta name="twitter:description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 主要参考了muduo的RPC实现，纯异步。">
@@ -218,9 +218,9 @@ var _hmt = _hmt || [];
     <div class="level post-navigation is-flex-wrap is-mobile">
         
         <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/01/29/bilibili-limit/">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/01/15/microservice/">
                 <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">B站微服务框架自适应限流模块分析</span>
+                <span class="level-item">微服务模式下如何写业务逻辑？</span>
             </a>
         </div>
         
@@ -302,7 +302,7 @@ var _hmt = _hmt || [];
                     </p>
                     <a href="/archives">
                         <p class="title has-text-weight-normal">
-                            11
+                            13
                         </p>
                     </a>
                 </div>
@@ -449,7 +449,7 @@ var _hmt = _hmt || [];
                 <span class="level-item">系统设计</span>
             </span>
             <span class="level-end">
-                <span class="level-item tag">1</span>
+                <span class="level-item tag">3</span>
             </span>
         </a></li>
             </ul>
@@ -464,6 +464,17 @@ var _hmt = _hmt || [];
             归档
         </h3>
         <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2020/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2020</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
         
         <li>
             <a class="level is-marginless" href="/archives/2020/03/">
@@ -493,7 +504,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">1</span>
+                    <span class="level-item tag">2</span>
                 </span>
             </a>
         </li>
@@ -541,7 +552,7 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             标签云
         </h3>
-        <a href="/tags/6-824/" style="font-size: 10px;">6.824</a> <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/IM/" style="font-size: 10px;">IM</a> <a href="/tags/MapReduce/" style="font-size: 10px;">MapReduce</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/etcd/" style="font-size: 10px;">etcd</a> <a href="/tags/goim/" style="font-size: 10px;">goim</a> <a href="/tags/golang/" style="font-size: 10px;">golang</a> <a href="/tags/hbase/" style="font-size: 10px;">hbase</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/分布式/" style="font-size: 20px;">分布式</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
+        <a href="/tags/6-824/" style="font-size: 10px;">6.824</a> <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 13.33px;">C++</a> <a href="/tags/IM/" style="font-size: 10px;">IM</a> <a href="/tags/MapReduce/" style="font-size: 10px;">MapReduce</a> <a href="/tags/PhxRPC/" style="font-size: 16.67px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/etcd/" style="font-size: 10px;">etcd</a> <a href="/tags/goim/" style="font-size: 10px;">goim</a> <a href="/tags/golang/" style="font-size: 10px;">golang</a> <a href="/tags/hbase/" style="font-size: 10px;">hbase</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/zookeeper/" style="font-size: 13.33px;">zookeeper</a> <a href="/tags/分布式/" style="font-size: 20px;">分布式</a> <a href="/tags/微服务/" style="font-size: 13.33px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
 </div>
         
@@ -610,7 +621,7 @@ var _hmt = _hmt || [];
                 <span class="level-item">系统设计</span>
             </span>
             <span class="level-end">
-                <span class="level-item tag">1</span>
+                <span class="level-item tag">3</span>
             </span>
         </a></li>
             </ul>
@@ -625,6 +636,17 @@ var _hmt = _hmt || [];
             归档
         </h3>
         <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2020/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2020</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
         
         <li>
             <a class="level is-marginless" href="/archives/2020/03/">
@@ -654,7 +676,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">一月 2020</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">1</span>
+                    <span class="level-item tag">2</span>
                 </span>
             </a>
         </li>
@@ -702,7 +724,7 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             标签云
         </h3>
-        <a href="/tags/6-824/" style="font-size: 10px;">6.824</a> <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/IM/" style="font-size: 10px;">IM</a> <a href="/tags/MapReduce/" style="font-size: 10px;">MapReduce</a> <a href="/tags/PhxRPC/" style="font-size: 20px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/etcd/" style="font-size: 10px;">etcd</a> <a href="/tags/goim/" style="font-size: 10px;">goim</a> <a href="/tags/golang/" style="font-size: 10px;">golang</a> <a href="/tags/hbase/" style="font-size: 10px;">hbase</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/分布式/" style="font-size: 20px;">分布式</a> <a href="/tags/微服务/" style="font-size: 10px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
+        <a href="/tags/6-824/" style="font-size: 10px;">6.824</a> <a href="/tags/ASIO/" style="font-size: 10px;">ASIO</a> <a href="/tags/C/" style="font-size: 13.33px;">C++</a> <a href="/tags/IM/" style="font-size: 10px;">IM</a> <a href="/tags/MapReduce/" style="font-size: 10px;">MapReduce</a> <a href="/tags/PhxRPC/" style="font-size: 16.67px;">PhxRPC</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/coroutine/" style="font-size: 10px;">coroutine</a> <a href="/tags/etcd/" style="font-size: 10px;">etcd</a> <a href="/tags/goim/" style="font-size: 10px;">goim</a> <a href="/tags/golang/" style="font-size: 10px;">golang</a> <a href="/tags/hbase/" style="font-size: 10px;">hbase</a> <a href="/tags/protobuf/" style="font-size: 10px;">protobuf</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/zookeeper/" style="font-size: 13.33px;">zookeeper</a> <a href="/tags/分布式/" style="font-size: 20px;">分布式</a> <a href="/tags/微服务/" style="font-size: 13.33px;">微服务</a> <a href="/tags/网络库/" style="font-size: 10px;">网络库</a> <a href="/tags/自适应限流/" style="font-size: 10px;">自适应限流</a>
     </div>
 </div>
     
