@@ -19,7 +19,7 @@
 <meta property="og:description" content="项目里的网络库用了asio，看了asio的文档后感觉用asio挺好用的，很容易实现一个网络库，而且有单独的版本可以不依赖boost，我们的目标是实现一个多线程，每个线程都有一个事件循环的异步网络库。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-04-02T09:26:41.859Z">
+<meta property="og:updated_time" content="2020-04-05T13:38:40.165Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="基于ASIO实现C++网络库">
 <meta name="twitter:description" content="项目里的网络库用了asio，看了asio的文档后感觉用asio挺好用的，很容易实现一个网络库，而且有单独的版本可以不依赖boost，我们的目标是实现一个多线程，每个线程都有一个事件循环的异步网络库。">
@@ -151,7 +151,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    7 分钟 读完 (大约 1020 个字)
+                    7 分钟 读完 (大约 1033 个字)
                 </span>
                 
                 
@@ -176,6 +176,9 @@ var _hmt = _hmt || [];
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">SessionPtr TcpServer::newSession() &#123;</span><br><span class="line">    <span class="keyword">auto</span> loop = loopmgr_.findNextLoop();</span><br><span class="line">    <span class="keyword">auto</span> session = <span class="built_in">std</span>::make_shared&lt;T&gt;(loop, sessionid_++);</span><br><span class="line">    session-&gt;setMessageCallback(messagecallback_);</span><br><span class="line">    session-&gt;setConnectionCallback(connectioncallback_);</span><br><span class="line">    session-&gt;setDisconnectCallback(<span class="built_in">std</span>::bind(&amp;TcpServer::DefaultDisconnectCallback, <span class="keyword">this</span>, _1));</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; guard(mutex_);</span><br><span class="line">        connections_.insert(&#123;sessionid_, session&#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> session;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>这里的newSession使用模板函数用来创建Session不同的子类，直接使用轮询将session派发到不同的eventloop中。</p>
 <p>直接使用asio比用epoll还是方便不少的，而且跨平台，但是asio的代码可读性太差，不知道会不会有什么坑，性能比封装epoll肯定也要差些。</p>
+<blockquote>
+<p>代码地址：<a href="https://github.com/Nickqiaoo/cppim/tree/master/net">https://github.com/Nickqiaoo/cppim/tree/master/net</a></p>
+</blockquote>
 
         </div>
         

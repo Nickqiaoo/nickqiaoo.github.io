@@ -19,7 +19,7 @@
 <meta property="og:description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 主要参考了muduo的RPC实现，纯异步。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-04-02T09:26:41.859Z">
+<meta property="og:updated_time" content="2020-04-05T13:38:40.165Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="使用C++基于protobuf实现RPC框架">
 <meta name="twitter:description" content="实现了网络库之后，实现RPC就很简单了，重点是如何识别RPC函数和序列化消息，protobuf为我们提供了抽象，在proto文件中定义service字段它就会为我们生成RPC调用函数。 主要参考了muduo的RPC实现，纯异步。">
@@ -151,7 +151,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    9 分钟 读完 (大约 1322 个字)
+                    9 分钟 读完 (大约 1335 个字)
                 </span>
                 
                 
@@ -189,6 +189,9 @@ var _hmt = _hmt || [];
 <p>Client发请求：Stub.Ping()-&gt;RpcChannel.CallMethod()-&gt;RpcCodec.send()</p>
 <p>Client收回复：RpcChannel.onRpcMessage()-&gt;根据servicename找到service，根据methodname生成Descriptor，生成函数参数-&gt;service.CallMethod()-&gt;调用对应RPC函数</p>
 <p>Server收请求：RpcChannel.onRpcMessage()-&gt;根据id调用回调</p>
+<blockquote>
+<p>代码地址：<a href="https://github.com/Nickqiaoo/cppim/tree/master/rpc">https://github.com/Nickqiaoo/cppim/tree/master/rpc</a></p>
+</blockquote>
 
         </div>
         

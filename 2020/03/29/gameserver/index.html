@@ -19,7 +19,7 @@
 <meta property="og:description" content="到项目组支援差不多半年，这半年什么乱七八糟的东西都干过，写过c++，golang，改过PHP，敲过lua，整过前端，最近又给了我个改router的活，，，这router是拿c#写的。。。。（c#的await真香！），现在对游戏服务器的整个架构和实现算是比较了解，游戏不同于web，不同的游戏类型架构差距应该也很大，，我就拿我在的这个项目组做个简单的总结。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://nickqiaoo.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2020-04-02T09:26:41.859Z">
+<meta property="og:updated_time" content="2020-04-05T13:38:40.165Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="关于游戏服务器与其它互联网业务服务器的思考">
 <meta name="twitter:description" content="到项目组支援差不多半年，这半年什么乱七八糟的东西都干过，写过c++，golang，改过PHP，敲过lua，整过前端，最近又给了我个改router的活，，，这router是拿c#写的。。。。（c#的await真香！），现在对游戏服务器的整个架构和实现算是比较了解，游戏不同于web，不同的游戏类型架构差距应该也很大，，我就拿我在的这个项目组做个简单的总结。">
@@ -151,7 +151,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    15 分钟 读完 (大约 2190 个字)
+                    15 分钟 读完 (大约 2273 个字)
                 </span>
                 
                 
@@ -166,7 +166,7 @@ var _hmt = _hmt || [];
         <div class="content">
             <p>到项目组支援差不多半年，这半年什么乱七八糟的东西都干过，写过c++，golang，改过PHP，敲过lua，整过前端，最近又给了我个改router的活，，，这router是拿c#写的。。。。（c#的await真香！），现在对游戏服务器的整个架构和实现算是比较了解，游戏不同于web，不同的游戏类型架构差距应该也很大，，我就拿我在的这个项目组做个简单的总结。</p>
 <a id="more"></a>
-<h2 id="游戏服务器"><a href="#游戏服务器" class="headerlink" title="游戏服务器"></a>游戏服务器</h2><p>先说说游戏服务器的整体架构，以我在的这个项目为例，这是个经营养成游戏，主要是做主线，玩养成，有少量的玩家间交互，比如社团会同屏，还有海上巡演，就是类似崩3的那种3人组队玩法。游戏业务的特点是对延迟比较敏感，数据变动频繁，玩家数据都在内存中维护，数据库相当于玩家某个时刻的存档。</p>
+<h2 id="游戏服务器"><a href="#游戏服务器" class="headerlink" title="游戏服务器"></a>游戏服务器</h2><p>先说说游戏服务器的整体架构，以我在的这个项目为例，这是个经营养成游戏，主要是做主线，玩养成，有少量的玩家间交互，比如社团会同屏，还有海上巡演，就是类似崩3的那种3人组队玩法。游戏业务的特点是对延迟比较敏感，数据变动频繁，玩家数据都在内存中维护，数据库相当于玩家某个时刻的存档。玩家上线将数据拉到内存中，之后的操作都对内存数据操作，隔一段时间刷新到数据库去。</p>
 <p><img src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/GameServer.png" alt="gameserver"></p>
 <p>整个架构比较简单，服务器绝大部分逻辑用C++实现，少量活动之类的业务使用lua实现。客户端通过loginserver的http接口验证账号，拿到登录token和gatesever的地址然后和gateserver建立长连接，gateserver会请求router把玩家分配到一个gameserver上，玩家之后所有的操作都固定在这台gameserver上，有一些其他交互操作比如工会，拆分一个独立的socialserver上，其实我觉得这个router在这完全没必要。。。直接静态哈希不就完了？跟项目组的讨论他们也觉得没必要，，，稀里糊涂上面就要做个这东西。玩家的数据不是实时更新的，而是定时向dbserver发送请求保存一下玩家的数据。实时扩展的话只支持gameserver，因为服务器之间通过配置文件需要有一方主动连接，然后在connected的回调函数中完成信息交换。</p>
 <p>代码层面，整个服务器完全是事件驱动的异步机制，业务开发都通过异步+回调来实现，写起来真的恶心。。。<br>总体来说，我觉得从各方面都是比较落后的，业务逻辑C++开发，调试麻烦，效率极低，几十G的客户端太重，测试困难，系统扩展性差，监控什么的也没有，总之就是很难受。</p>
@@ -190,7 +190,7 @@ var _hmt = _hmt || [];
 <p>AsyncThread是异步线程，建立的时候执行run函数不断处理异步任务，AsyncModule的update函数会调用loop函数在主线程中执行异步任务完成后的回调。</p>
 <p>有了这几个组件，整个服务器最基本的功能其实就差不多了，其他功能都可以通过增加Module的方式来添加。</p>
 <h2 id="互联网服务器"><a href="#互联网服务器" class="headerlink" title="互联网服务器"></a>互联网服务器</h2><p>我这里想要说的互联网指的是一般的web服务器，API服务器，客户端与服务器一般使用HTTP交互，服务器之间使用RPC通信，服务器自身无状态。现在微服务架构基本已经普及了，以我看到的B站代码为例==，微服务模式下的架构如下：<br><img src="https://blog-1252613135.cos.ap-beijing.myqcloud.com/microservice.png" alt="microservice"><br>这里只是一个简单的架构图，实际架构应该要复杂很多，比如会有配置中心，收集日志的agent，收集trace信息的agent，监控组件，各种数据库集群，中间件集群再加上k8s，还有很多OLAP的数据分析等等。</p>
-<p>最前面是API GateWay,比如Kong，完成负载均衡，鉴权，限流等功能，随后转发到Interface中，这里完成参数的一些校验，往后调用Service完成业务逻辑，一些异步任务写到kafka中，job负责订阅对应的topic去消费。服务之间使用服务发现组件获得其他服务的信息，使用RPC通信，调用链路会很长。</p>
+<p>最前面是API GateWay,比如Kong，完成负载均衡，鉴权，限流等功能，随后转发到Interface中，这里完成参数的一些校验，往后调用Service完成业务逻辑，一些异步任务写到kafka中，job负责订阅对应的topic去消费。服务之间使用服务发现组件获得其他服务的信息，使用RPC通信，调用链路会很长。不同于游戏直接操作内存中的玩家数据，服务器一般是无状态的，数据都从redis或者MySQL中直接获取。</p>
 <p>代码层面，以go为例，由于它的协程机制，一个连接一个协程，业务逻辑都以同步的方式写，代码看起来就清晰多了，相比较下，感觉互联网的业务逻辑是简单一点的。</p>
 <p>最后 </p>
 <p>不想做游戏了。。。</p>
