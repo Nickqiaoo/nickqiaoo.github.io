@@ -1,0 +1,42 @@
+name: Hexo Deploy
+
+on:
+  push:
+    branches:
+      - source
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+        with:
+          ref: source
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12'
+
+      - name: Setup Hexo
+        env:
+          ACTION_DEPLOY_KEY: ${{ secrets.HEXO_DEPLOY_PRI }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$ACTION_DEPLOY_KEY" > ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global user.email "nickqiaoo@gmail.com"
+          git config --global user.name "Nickqiaoo"
+          npm install hexo-cli -g
+          npm install
+          npm install --save hexo-helper-live2d
+          npm install live2d-widget-model-haru
+
+      - name: Deploy
+        run: |
+          hexo clean
+          hexo deploy
