@@ -141,7 +141,7 @@ widgets:
         # Email address for the Gravatar to be shown in the profile widget
         gravatar: 
         # Whether to show avatar image rounded or square
-        avatar_rounded: false
+        avatar_rounded: true
         # Path or URL for the follow button
         follow_link: 'https://linktr.ee/nickqiao'
         # Links to be shown on the bottom of the profile widget
