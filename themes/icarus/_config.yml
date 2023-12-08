@@ -75,21 +75,9 @@ search:
 # https://ppoffice.github.io/hexo-theme-icarus/categories/Plugins/Comment
 comment:
     # Name of the comment plugin
-    type: gitalk
-    client_id: ef6d96c25c105573f7d5
-    client_secret: 24c8db3004f991b295aff32c2ae9a6b7e1de55c3
-    repo: nickqiaoo.github.io
-    owner: Nickqiaoo
-    admin:
-        - Nickqiaoo
-    per_page: 20                    # 可选填
-    distraction_free_mode: false    # 可选填
-    pager_direction: last           # 可选填
-    create_issue_manually: false    # 可选填
-    proxy:                          # 可选填
-    flip_move_options:              # 可选填
-    enable_hotkey: true             # 可选填
-    language: zh-CN                 # 可选填
+    type: disqus
+    shortname: blog-my60clmtwc
+
  
 # Donation entries
 # https://ppoffice.github.io/hexo-theme-icarus/categories/Donation/
