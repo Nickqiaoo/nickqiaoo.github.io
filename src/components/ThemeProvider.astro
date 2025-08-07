@@ -1,13 +1,64 @@
 {/* Inlined to avoid FOUC. This is a parser blocking script. */}
 <script is:inline>
-	const lightModePref = window.matchMedia("(prefers-color-scheme: light)");
+	const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+	const lightModeQuery = window.matchMedia("(prefers-color-scheme: light)");
 
-	function getUserPref() {
-		const storedTheme = typeof localStorage !== "undefined" && localStorage.getItem("theme");
-		return storedTheme || (lightModePref.matches ? "light" : "dark");
+	function isNightTime() {
+		const hour = new Date().getHours();
+		return hour >= 21 || hour < 7;
 	}
 
-	function setTheme(newTheme) {
+	function getStoredTheme() {
+		if (typeof localStorage === "undefined") return null;
+		
+		const stored = localStorage.getItem("theme-data");
+		if (!stored) return null;
+		
+		try {
+			const data = JSON.parse(stored);
+			const now = Date.now();
+			
+			if (data.expires && now > data.expires) {
+				localStorage.removeItem("theme-data");
+				return null;
+			}
+			
+			return data.theme;
+		} catch {
+			localStorage.removeItem("theme-data");
+			return null;
+		}
+	}
+
+	function setStoredTheme(theme, hoursToExpire = 12) {
+		if (typeof localStorage === "undefined") return;
+		
+		const data = {
+			theme: theme,
+			expires: Date.now() + (hoursToExpire * 60 * 60 * 1000),
+			timestamp: Date.now()
+		};
+		
+		localStorage.setItem("theme-data", JSON.stringify(data));
+	}
+
+	function getUserPref() {
+		const storedTheme = getStoredTheme();
+		
+		if (storedTheme && storedTheme !== "auto") {
+			return storedTheme;
+		}
+		
+		if (darkModeQuery.matches) {
+			return "dark";
+		} else if (lightModeQuery.matches) {
+			return "light";
+		}
+		
+		return isNightTime() ? "dark" : "light";
+	}
+
+	function setTheme(newTheme, isUserAction = false) {
 		if (newTheme !== "light" && newTheme !== "dark") {
 			return console.warn(
 				`Invalid theme value '${newTheme}' received. Expected 'light' or 'dark'.`,
@@ -23,8 +74,8 @@
 
 		root.setAttribute("data-theme", newTheme);
 
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem("theme", newTheme);
+		if (isUserAction) {
+			setStoredTheme(newTheme, 24); 
 		}
 	}
 
@@ -36,9 +87,20 @@
 
 	// listen for theme-change custom event, fired in src/components/ThemeToggle.astro
 	document.addEventListener("theme-change", (e) => {
-		setTheme(e.detail.theme);
+		setTheme(e.detail.theme, true); 
 	});
 
-	// listen for prefers-color-scheme change.
-	lightModePref.addEventListener("change", (e) => setTheme(e.matches ? "light" : "dark"));
+	darkModeQuery.addEventListener("change", (e) => {
+		const storedTheme = getStoredTheme();
+		if (!storedTheme || storedTheme === "auto") {
+			setTheme(e.matches ? "dark" : "light");
+		}
+	});
+
+	lightModeQuery.addEventListener("change", (e) => {
+		const storedTheme = getStoredTheme();
+		if (!storedTheme || storedTheme === "auto") {
+			setTheme(e.matches ? "light" : "dark");
+		}
+	});
 </script>
