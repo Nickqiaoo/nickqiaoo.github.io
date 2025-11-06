@@ -89,13 +89,11 @@ const socialImageURL = new URL(ogImage ? ogImage : "/social-card.png", Astro.url
 	import.meta.env.PROD && (
 		<>
 			<script async src="https://www.googletagmanager.com/gtag/js?id=G-MSFTFDK1EE"></script>
-			<script>
-				{`
+			<script is:inline>
 				window.dataLayer = window.dataLayer || [];
 				function gtag(){dataLayer.push(arguments);}
 				gtag('js', new Date());
 				gtag('config', 'G-MSFTFDK1EE');
-				`}
 			</script>
 		</>
 	)
